@@ -19,8 +19,13 @@ var templatesFS embed.FS
 //go:embed static/*
 var staticFS embed.FS
 
+type View struct {
+	Title string
+	Data  any
+}
+
 type App struct {
-	tpl       *template.Template
+	base      *template.Template
 	smbConf   string
 	shareRoot string
 
@@ -32,12 +37,12 @@ func main() {
 	smbConf := getenv("SMB_CONF", "/etc/samba/smb.conf")
 	shareRoot := getenv("SHARE_ROOT", "/shares")
 
-	tpl := template.Must(template.New("").Funcs(template.FuncMap{
+	base := template.Must(template.New("").Funcs(template.FuncMap{
 		"now": time.Now,
-	}).ParseFS(templatesFS, "templates/*.html"))
+	}).ParseFS(templatesFS, "templates/layout.html"))
 
 	app := &App{
-		tpl:       tpl,
+		base:      base,
 		smbConf:   smbConf,
 		shareRoot: shareRoot,
 	}
@@ -83,7 +88,7 @@ func (a *App) dashboard(w http.ResponseWriter, r *http.Request) {
 		lr = &t
 	}
 
-	a.render(w, "dashboard.html", vm{
+	a.render(w, "dashboard.html", "Dashboard", vm{
 		Now:        time.Now(),
 		SmbConf:    a.smbConf,
 		ConfigOK:   ok,
@@ -112,7 +117,7 @@ func (a *App) shares(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		a.render(w, "shares.html", vm{SmbConf: a.smbConf, Error: err.Error()})
+		a.render(w, "shares.html", "Shares", vm{SmbConf: a.smbConf, Error: err.Error()})
 		return
 	}
 
@@ -146,7 +151,7 @@ func (a *App) shares(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	a.render(w, "shares.html", vm{
+	a.render(w, "shares.html", "Shares", vm{
 		SmbConf: a.smbConf,
 		Raw:     raw,
 		Shares:  rows,
@@ -173,13 +178,13 @@ func (a *App) shareDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		a.render(w, "share_detail.html", vm{Name: name, SmbConf: a.smbConf, Error: err.Error()})
+		a.render(w, "share_detail.html", "Share "+name, vm{Name: name, SmbConf: a.smbConf, Error: err.Error()})
 		return
 	}
 
 	kv, ok := sections[name]
 	if !ok {
-		a.render(w, "share_detail.html", vm{Name: name, SmbConf: a.smbConf, Error: "share not found in effective config"})
+		a.render(w, "share_detail.html", "Share "+name, vm{Name: name, SmbConf: a.smbConf, Error: "share not found in effective config"})
 		return
 	}
 
@@ -193,7 +198,7 @@ func (a *App) shareDetail(w http.ResponseWriter, r *http.Request) {
 		resolved = path
 	}
 
-	a.render(w, "share_detail.html", vm{
+	a.render(w, "share_detail.html", "Share "+name, vm{
 		Name:     name,
 		SmbConf:  a.smbConf,
 		KV:       kv,
@@ -215,7 +220,7 @@ func (a *App) users(w http.ResponseWriter, r *http.Request) {
 
 	users, err := samba.ListSambaUsers()
 	if err != nil {
-		a.render(w, "users.html", vm{Error: err.Error()})
+		a.render(w, "users.html", "Users", vm{Error: err.Error()})
 		return
 	}
 
@@ -227,7 +232,7 @@ func (a *App) users(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	a.render(w, "users.html", vm{Users: rows})
+	a.render(w, "users.html", "Users", vm{Users: rows})
 }
 
 func (a *App) reload(w http.ResponseWriter, r *http.Request) {
@@ -243,11 +248,23 @@ func (a *App) reload(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (a *App) render(w http.ResponseWriter, name string, data any) {
+func (a *App) render(w http.ResponseWriter, pageFile string, title string, data any) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := a.tpl.ExecuteTemplate(w, "layout.html", map[string]any{
-		"Page": name,
-		"Data": data,
+
+	// Clone base layout and parse exactly one page file which defines {{ define "content" }}
+	tpl, err := a.base.Clone()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if _, err := tpl.ParseFS(templatesFS, "templates/"+pageFile); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tpl.ExecuteTemplate(w, "layout.html", View{
+		Title: title,
+		Data:  data,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

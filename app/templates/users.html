@@ -1,10 +1,10 @@
-{{ define "users.html" }}
+{{ define "content" }}
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h1 class="h3 mb-0">Samba Users</h1>
 </div>
 
-{{ if .Error }}
-  <div class="alert alert-danger">{{ .Error }}</div>
+{{ if .Data.Error }}
+  <div class="alert alert-danger">{{ .Data.Error }}</div>
 {{ else }}
   <div class="table-responsive">
     <table class="table table-sm align-middle">
@@ -15,7 +15,7 @@
         </tr>
       </thead>
       <tbody>
-        {{ range .Users }}
+        {{ range .Data.Users }}
         <tr>
           <td><code>{{ .Name }}</code></td>
           <td>
