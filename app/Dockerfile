@@ -1,9 +1,8 @@
 FROM golang:1.25.5-alpine AS build
 WORKDIR /app
-COPY app/go.mod ./
+COPY go.mod ./
 RUN go mod download
-COPY app/ .
-COPY entrypoint.sh .
+COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/samba-admin-ui ./main.go
 
 FROM debian:bookworm-slim
