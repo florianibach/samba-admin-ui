@@ -1,0 +1,54 @@
+{{ define "dashboard.html" }}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0">Dashboard</h1>
+  <form method="post" action="/reload">
+    <button class="btn btn-primary" type="submit">Reload Samba Config</button>
+  </form>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="fw-semibold mb-2">Config</div>
+        <div class="small text-muted mb-2">SMB_CONF: <code>{{ .SmbConf }}</code></div>
+
+        {{ if .ConfigOK }}
+          <div class="alert alert-success mb-0">testparm: OK</div>
+        {{ else }}
+          <div class="alert alert-danger mb-0">
+            testparm: FAILED<br>
+            <code>{{ .ConfigErr }}</code>
+          </div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <div class="fw-semibold mb-2">Service</div>
+
+        {{ if .SmbdUp }}
+          <div class="alert alert-success mb-2">smbd: running</div>
+        {{ else }}
+          <div class="alert alert-warning mb-2">smbd: not running ({{ .SmbdErr }})</div>
+        {{ end }}
+
+        {{ if .LastReload }}
+          <div class="small text-muted">Last reload: <code>{{ .LastReload }}</code></div>
+        {{ else }}
+          <div class="small text-muted">Last reload: <span class="text-muted">-</span></div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-4">
+  <div class="alert alert-info">
+    MVP: Shares/Users are read-only import. Edit Samba config in your terminal as usual; this UI won’t modify it.
+  </div>
+</div>
+{{ end }}

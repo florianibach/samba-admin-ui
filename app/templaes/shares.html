@@ -1,0 +1,45 @@
+{{ define "shares.html" }}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0">Shares</h1>
+</div>
+
+{{ if .Error }}
+  <div class="alert alert-danger">{{ .Error }}</div>
+{{ else }}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Path</th>
+          <th>read only</th>
+          <th>Path check</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Shares }}
+        <tr>
+          <td><a href="/shares/{{ .Name }}">{{ .Name }}</a></td>
+          <td><code>{{ .Path }}</code></td>
+          <td><code>{{ .ReadOnly }}</code></td>
+          <td>
+            {{ if .PathOK }}
+              <span class="badge text-bg-success">OK</span>
+              <span class="text-muted ms-2 small">{{ .Perms }}</span>
+            {{ else }}
+              <span class="badge text-bg-warning">WARN</span>
+              <span class="text-muted ms-2 small">{{ .Perms }}</span>
+            {{ end }}
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  <details class="mt-4">
+    <summary class="text-muted">Show raw effective config (testparm -s)</summary>
+    <pre class="mt-2 p-3 bg-light border rounded small" style="white-space: pre-wrap;">{{ .Raw }}</pre>
+  </details>
+{{ end }}
+{{ end }}

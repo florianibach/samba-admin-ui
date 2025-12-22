@@ -1,0 +1,43 @@
+{{ define "share_detail.html" }}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h1 class="h3 mb-0">Share: {{ .Name }}</h1>
+    <div class="text-muted small">SMB_CONF: <code>{{ .SmbConf }}</code></div>
+  </div>
+  <a class="btn btn-outline-secondary" href="/shares">Back</a>
+</div>
+
+{{ if .Error }}
+  <div class="alert alert-danger">{{ .Error }}</div>
+{{ else }}
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="fw-semibold mb-2">Path</div>
+      <div class="mb-2"><code>{{ index .KV "path" }}</code></div>
+      {{ if .PathOK }}
+        <span class="badge text-bg-success">OK</span>
+        <span class="text-muted ms-2 small">{{ .Perms }}</span>
+      {{ else }}
+        <span class="badge text-bg-warning">WARN</span>
+        <span class="text-muted ms-2 small">{{ .Perms }}</span>
+      {{ end }}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="fw-semibold mb-2">Settings (read-only)</div>
+      <table class="table table-sm">
+        <tbody>
+        {{ range $k, $v := .KV }}
+          <tr>
+            <td class="text-muted"><code>{{ $k }}</code></td>
+            <td><code>{{ $v }}</code></td>
+          </tr>
+        {{ end }}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{{ end }}
+{{ end }}

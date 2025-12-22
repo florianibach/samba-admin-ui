@@ -1,0 +1,39 @@
+{{ define "users.html" }}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h3 mb-0">Samba Users</h1>
+</div>
+
+{{ if .Error }}
+  <div class="alert alert-danger">{{ .Error }}</div>
+{{ else }}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Linux user exists?</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .Users }}
+        <tr>
+          <td><code>{{ .Name }}</code></td>
+          <td>
+            {{ if .LinuxExists }}
+              <span class="badge text-bg-success">Yes</span>
+            {{ else }}
+              <span class="badge text-bg-warning">No</span>
+              <span class="text-muted small ms-2">getent passwd {{ .Name }} failed</span>
+            {{ end }}
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-info">
+    MVP: user management actions (add/reset/enable/disable) come next — this page already gives you visibility + mismatch checks.
+  </div>
+{{ end }}
+{{ end }}

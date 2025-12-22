@@ -1,0 +1,36 @@
+services:
+  samba-admin-ui:
+    build:
+      context: ./app
+    container_name: samba-admin-ui
+    restart: unless-stopped
+
+    # UI
+    ports:
+      - "8080:8080"
+
+      # Samba ports (ohne host network mode)
+      - "445:445/tcp"
+      - "139:139/tcp"
+      - "137:137/udp"
+      - "138:138/udp"
+
+    environment:
+      - TZ=Europe/Berlin
+      - HTTP_ADDR=:8080
+
+      # Optional: Wo deine Shares im Container liegen sollen
+      - SHARE_ROOT=/shares
+
+      # Optional: Samba config path
+      - SMB_CONF=/etc/samba/smb.conf
+
+    volumes:
+      # Persist Samba config + passdb
+      - /home/florian/usbdrv/samba-admin-ui/data/samba:/etc/samba
+
+      # Deine Host-Daten (Beispiel)
+      - /home/florian/usbdrv/:/shares
+
+      # Optional: Logs
+      - /home/florian/usbdrv/samba-admin-ui/data/log:/var/log/samba
