@@ -200,12 +200,17 @@ func PathPerms(path string) (bool, string) {
 }
 
 func CreateLinuxUser(name string, uid *int, gid *int) error {
-	args := []string{"-M", "-s", "/usr/sbin/nologin"} // no home, no shell
+	if gid != nil {
+		if err := EnsureGroupExists(*gid); err != nil {
+			return err
+		}
+	}
+
+	args := []string{"-M", "-s", "/usr/sbin/nologin"}
 	if uid != nil {
 		args = append(args, "-u", strconv.Itoa(*uid))
 	}
 	if gid != nil {
-		// primary group id; ensure group exists or create group first in UI later
 		args = append(args, "-g", strconv.Itoa(*gid))
 	}
 	args = append(args, name)
@@ -227,6 +232,21 @@ func CreateSambaUser(name string, password string) error {
 	}
 	if code != 0 {
 		return fmt.Errorf("smbpasswd -a failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
+}
+
+func EnsureGroupExists(gid int) error {
+	// check by gid
+	_, _, code, _ := run(2*time.Second, "getent", "group", strconv.Itoa(gid))
+	if code == 0 {
+		return nil
+	}
+
+	// create group with same numeric gid and name = gid
+	_, errStr, code, _ := run(5*time.Second, "groupadd", "-g", strconv.Itoa(gid), strconv.Itoa(gid))
+	if code != 0 {
+		return fmt.Errorf("groupadd failed: %s", strings.TrimSpace(errStr))
 	}
 	return nil
 }
