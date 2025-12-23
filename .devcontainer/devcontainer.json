@@ -12,7 +12,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	//"postCreateCommand": "",
+	"postCreateCommand": "apt-get update && apt-get install -y --no-install-recommends samba smbclient tini && rm -rf /var/lib/apt/lists/*",
 
 	// Configure tool-specific properties.
 	// "customizations": {},
@@ -20,7 +20,9 @@
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	"remoteUser": "root",
 	"mounts": [
-	//	"source=/home/florian/usbdrv,target=/repo,type=bind,readonly",
+		"source=/home/florian/usbdrv,target=/shares,type=bind",
+    "source=/home/florian/usbdrv/samba-admin-ui/data/samba,target=/etc/samba,type=bind",
+    "source=/home/florian/usbdrv/samba-admin-ui/data/log,target=/var/log/samba,type=bind"
 	],
 	"remoteEnv": {
 	//	"RESTIC_REPOSITORY": "/repo",
