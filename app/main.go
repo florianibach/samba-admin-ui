@@ -113,6 +113,13 @@ func (a *App) dashboard(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) shares(w http.ResponseWriter, r *http.Request) {
 	sections, raw, err := samba.ReadEffectiveConfig(a.smbConf)
+	indexPath := getenv("UI_SHARES_INDEX", "/etc/samba/shares.d/ui/shares.conf")
+	managed, err := samba.ReadManagedSharesIndex(indexPath)
+	if err != nil {
+		// log + treat as empty so UI still works
+		managed = map[string]samba.ManagedShareState{}
+	}
+
 	type shareRow struct {
 		Name      string
 		Path      string
@@ -120,6 +127,9 @@ func (a *App) shares(w http.ResponseWriter, r *http.Request) {
 		ManagedBy string
 		PathOK    bool
 		Perms     string
+
+		Managed  bool
+		Disabled bool
 	}
 	type vm struct {
 		SmbConf string
@@ -152,15 +162,20 @@ func (a *App) shares(w http.ResponseWriter, r *http.Request) {
 		}
 
 		pathOK, perms := samba.PathPerms(path)
+		st, ok := managed[name]
+		isManaged := ok
+		isDisabled := ok && st.Disabled
 
 		rows = append(rows, shareRow{
-			Name:      name,
-			Path:      path,
-			ReadOnly:  ro,
-			ManagedBy: "manual", // MVP: everything is manual; later add managed/custom tags
-			PathOK:    pathOK,
-			Perms:     perms,
+			Name:     name,
+			Path:     path,
+			ReadOnly: ro,
+			PathOK:   pathOK,
+			Perms:    perms,
+			Managed:  isManaged,
+			Disabled: isDisabled,
 		})
+
 	}
 
 	a.render(w, "shares.html", "Shares", vm{
