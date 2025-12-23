@@ -18,6 +18,7 @@ if [[ ! -f "$SMB_CONF" ]]; then
   smb ports = 445 139
   disable netbios = no
   server min protocol = SMB2
+  include = /etc/samba/shares.d/ui/shares.conf
 EOF
 fi
 
