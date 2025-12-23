@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -35,6 +36,32 @@ func run(timeout time.Duration, name string, args ...string) (string, string, in
 		}
 	}
 
+	return out.String(), errb.String(), exitCode, nil
+}
+
+func runWithStdin(timeout time.Duration, stdin string, name string, args ...string) (string, string, int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, name, args...)
+	var out, errb bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errb
+	cmd.Stdin = strings.NewReader(stdin)
+
+	err := cmd.Run()
+
+	exitCode := 0
+	if err != nil {
+		var ee *exec.ExitError
+		if errors.As(err, &ee) {
+			exitCode = ee.ExitCode()
+		} else if errors.Is(err, context.DeadlineExceeded) {
+			return out.String(), errb.String(), 124, fmt.Errorf("timeout running %s", name)
+		} else {
+			return out.String(), errb.String(), 1, err
+		}
+	}
 	return out.String(), errb.String(), exitCode, nil
 }
 
@@ -170,4 +197,72 @@ func PathPerms(path string) (bool, string) {
 		gid = fmt.Sprintf("%d", st.Gid)
 	}
 	return true, fmt.Sprintf("uid=%s gid=%s mode=%s", uid, gid, perms)
+}
+
+func CreateLinuxUser(name string, uid *int, gid *int) error {
+	args := []string{"-M", "-s", "/usr/sbin/nologin"} // no home, no shell
+	if uid != nil {
+		args = append(args, "-u", strconv.Itoa(*uid))
+	}
+	if gid != nil {
+		// primary group id; ensure group exists or create group first in UI later
+		args = append(args, "-g", strconv.Itoa(*gid))
+	}
+	args = append(args, name)
+
+	_, errStr, code, _ := run(5*time.Second, "useradd", args...)
+	if code != 0 {
+		return fmt.Errorf("useradd failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
+}
+
+func CreateSambaUser(name string, password string) error {
+	// smbpasswd reads password twice from stdin
+	// Use: printf "pw\npw\n" | smbpasswd -a -s name
+	in := fmt.Sprintf("%s\n%s\n", password, password)
+	_, errStr, code, err := runWithStdin(8*time.Second, in, "smbpasswd", "-a", "-s", name)
+	if err != nil && code == 0 {
+		return err
+	}
+	if code != 0 {
+		return fmt.Errorf("smbpasswd -a failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
+}
+
+func SetSambaPassword(name, password string) error {
+	in := fmt.Sprintf("%s\n%s\n", password, password)
+	_, errStr, code, err := runWithStdin(8*time.Second, in, "smbpasswd", "-s", name)
+	if err != nil && code == 0 {
+		return err
+	}
+	if code != 0 {
+		return fmt.Errorf("smbpasswd set password failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
+}
+
+func EnableSambaUser(name string) error {
+	_, errStr, code, _ := run(5*time.Second, "smbpasswd", "-e", name)
+	if code != 0 {
+		return fmt.Errorf("smbpasswd -e failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
+}
+
+func DisableSambaUser(name string) error {
+	_, errStr, code, _ := run(5*time.Second, "smbpasswd", "-d", name)
+	if code != 0 {
+		return fmt.Errorf("smbpasswd -d failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
+}
+
+func DeleteSambaUser(name string) error {
+	_, errStr, code, _ := run(5*time.Second, "smbpasswd", "-x", name)
+	if code != 0 {
+		return fmt.Errorf("smbpasswd -x failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
 }

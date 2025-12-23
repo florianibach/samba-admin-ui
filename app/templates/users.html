@@ -3,6 +3,37 @@
   <h1 class="h3 mb-0">Samba Users</h1>
 </div>
 
+<div class="card mt-4">
+  <div class="card-body">
+    <div class="fw-semibold mb-2">Create user</div>
+    <form method="post" action="/users/create" class="row g-2">
+      <div class="col-md-3">
+        <input class="form-control" name="name" placeholder="username (e.g. vater)" required>
+      </div>
+      <div class="col-md-3">
+        <input class="form-control" name="password" placeholder="password" type="password" required>
+      </div>
+
+      <div class="col-md-2">
+        <input class="form-control" name="uid" placeholder="UID (optional)">
+      </div>
+      <div class="col-md-2">
+        <input class="form-control" name="gid" placeholder="GID (optional)">
+      </div>
+
+      <div class="col-md-2 d-grid">
+        <button class="btn btn-primary" type="submit">Create</button>
+      </div>
+      <div class="col-12">
+        <div class="form-text">
+          If the Linux user doesn’t exist, the UI will create it (no home, nologin). UID/GID are optional.
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
 {{ if .Data.Error }}
   <div class="alert alert-danger">{{ .Data.Error }}</div>
 {{ else }}
@@ -12,6 +43,7 @@
         <tr>
           <th>User</th>
           <th>Linux user exists?</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -26,6 +58,20 @@
               <span class="text-muted small ms-2">getent passwd {{ .Name }} failed</span>
             {{ end }}
           </td>
+          <td class="text-nowrap">
+          <form class="d-inline" method="post" action="/users/enable">
+            <input type="hidden" name="name" value="{{ .Name }}">
+            <button class="btn btn-sm btn-outline-success" type="submit">Enable</button>
+          </form>
+          <form class="d-inline" method="post" action="/users/disable">
+            <input type="hidden" name="name" value="{{ .Name }}">
+            <button class="btn btn-sm btn-outline-warning" type="submit">Disable</button>
+          </form>
+          <form class="d-inline" method="post" action="/users/delete" onsubmit="return confirm('Delete Samba user {{ .Name }}?')">
+            <input type="hidden" name="name" value="{{ .Name }}">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+          </form>
+        </td>
         </tr>
         {{ end }}
       </tbody>
