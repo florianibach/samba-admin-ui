@@ -13,6 +13,10 @@
       <div class="col-md-3">
         <input class="form-control" name="password" placeholder="password" type="password" required>
       </div>
+      <div class="col-md-3">
+        <input class="form-control" name="password_confirm" placeholder="confirm password" type="password" required>
+      </div>
+
 
       <div class="col-md-2">
         <input class="form-control" name="uid" placeholder="UID (optional)">
@@ -83,3 +87,21 @@
   </div>
 {{ end }}
 {{ end }}
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector('form[action="/users/create"]');
+  if (!form) return;
+
+  form.addEventListener("submit", (e) => {
+    const pw = form.querySelector('input[name="password"]').value;
+    const pw2 = form.querySelector('input[name="password_confirm"]').value;
+    if (pw !== pw2) {
+      e.preventDefault();
+      alert("Passwords do not match.");
+    }
+  });
+});
+</script>

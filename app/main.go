@@ -301,6 +301,14 @@ func (a *App) userCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	pw := r.FormValue("password")
+	pw2 := r.FormValue("password_confirm")
+
+	if pw != pw2 {
+		http.Error(w, "passwords do not match", http.StatusBadRequest)
+		return
+	}
+
 	req := CreateUserRequest{
 		Name:     strings.TrimSpace(r.FormValue("name")),
 		Password: r.FormValue("password"),
