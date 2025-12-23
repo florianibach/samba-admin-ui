@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 )
 
 var shareNameRx = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
@@ -72,12 +71,7 @@ func CreateShareSnippet(snippetDir string, opt CreateShareOptions) (string, erro
 		return "", fmt.Errorf("path must be an absolute path")
 	}
 
-	// prevent path traversal
 	file := filepath.Join(snippetDir, name+".conf")
-	if !strings.HasPrefix(filepath.Clean(file), filepath.Clean(snippetDir)+string(os.PathSeparator)) {
-		return "", fmt.Errorf("invalid target path")
-	}
-
 	if err := os.MkdirAll(snippetDir, 0755); err != nil {
 		return "", err
 	}
@@ -92,7 +86,6 @@ func CreateShareSnippet(snippetDir string, opt CreateShareOptions) (string, erro
 	}
 
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("[%s]\n", name))
 	b.WriteString(fmt.Sprintf("path = %s\n", path))
 	b.WriteString(fmt.Sprintf("read only = %s\n", ro))
 	b.WriteString(fmt.Sprintf("browseable = %s\n", br))
@@ -100,28 +93,27 @@ func CreateShareSnippet(snippetDir string, opt CreateShareOptions) (string, erro
 
 	vu := strings.TrimSpace(opt.ValidUsers)
 	if vu != "" {
-		// normalize: allow "a,b" -> "a, b"
 		parts := strings.Split(vu, ",")
 		var cleaned []string
 		for _, p := range parts {
-			c := strings.TrimSpace(p)
-			if c == "" {
-				continue
+			if c := strings.TrimSpace(p); c != "" {
+				cleaned = append(cleaned, c)
 			}
-			cleaned = append(cleaned, c)
 		}
 		if len(cleaned) > 0 {
 			b.WriteString(fmt.Sprintf("valid users = %s\n", strings.Join(cleaned, ", ")))
 		}
 	}
 
+	// Optional Defaults (wenn du willst – passt zu deinen anderen Shares)
+	b.WriteString("create mask = 0660\n")
+	b.WriteString("directory mask = 0770\n")
+
+	// Wichtig: Datei endet mit Newline
 	b.WriteString("\n")
 
 	if err := os.WriteFile(file, []byte(b.String()), 0644); err != nil {
 		return "", err
 	}
-
-	// quick sanity check: reload is separate, but nice to ensure file written
-	_ = time.Now()
 	return file, nil
 }
