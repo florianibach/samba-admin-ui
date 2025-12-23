@@ -22,6 +22,11 @@ if [[ ! -f "$SMB_CONF" ]]; then
 EOF
 fi
 
+# Also ensure samba lib exists (volume is mounted)
+mkdir -p /var/lib/samba/private /var/lib/samba/printers
+chmod 0700 /var/lib/samba/private
+
+
 # Start Samba daemons in background
 # (This is MVP-grade; later you may want s6/supervisor for robustness.)
 mkdir -p /run/samba /var/log/samba
