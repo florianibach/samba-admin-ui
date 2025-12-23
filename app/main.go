@@ -63,6 +63,8 @@ func main() {
 	mux.HandleFunc("/users/disable", app.userDisable)
 	mux.HandleFunc("/users/delete", app.userDelete)
 
+	mux.HandleFunc("/shares/create", app.shareCreate)
+
 	log.Printf("samba-admin-ui listening on %s", addr)
 	log.Fatal(http.ListenAndServe(addr, withHeaders(mux)))
 }
@@ -431,4 +433,87 @@ func (a *App) userDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/users", http.StatusSeeOther)
+}
+
+type ShareCreateForm struct {
+	SmbConf     string
+	SnippetDir  string
+	Name        string
+	Path        string
+	ReadOnly    bool
+	Browseable  bool
+	ValidUsers  string
+	Error       string
+	IncludeGlob string
+}
+
+func (a *App) shareCreate(w http.ResponseWriter, r *http.Request) {
+	sharesDir := getenv("UI_SHARES_DIR", "/etc/samba/shares.d/ui")
+	indexPath := getenv("UI_SHARES_INDEX", "/etc/samba/shares.d/ui/shares.conf")
+
+	if r.Method == http.MethodGet {
+		a.render(w, "share_create.html", "Create Share", ShareCreateForm{
+			SmbConf:    a.smbConf,
+			SnippetDir: sharesDir,
+			Browseable: true,
+		})
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/shares", http.StatusSeeOther)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	form := ShareCreateForm{
+		SmbConf:    a.smbConf,
+		SnippetDir: sharesDir,
+		Name:       strings.TrimSpace(r.FormValue("name")),
+		Path:       strings.TrimSpace(r.FormValue("path")),
+		ReadOnly:   r.FormValue("readOnly") == "on",
+		Browseable: r.FormValue("browseable") != "off",
+		ValidUsers: strings.TrimSpace(r.FormValue("validUsers")),
+	}
+
+	// 0) smb.conf must include our index file (read-only check)
+	if err := samba.CheckSmbConfIncludesIndex(a.smbConf, indexPath); err != nil {
+		form.Error = err.Error() + " (smb.conf is read-only; please add it manually)"
+		a.render(w, "share_create.html", "Create Share", form)
+		return
+	}
+
+	// 1) Write share file: /etc/samba/shares.d/ui/<name>.conf
+	shareFile := filepath.Join(sharesDir, form.Name+".conf")
+	_, err := samba.CreateShareSnippet(sharesDir, samba.CreateShareOptions{
+		Name:       form.Name,
+		Path:       form.Path,
+		ReadOnly:   form.ReadOnly,
+		Browseable: form.Browseable,
+		ValidUsers: form.ValidUsers,
+	})
+	if err != nil {
+		form.Error = err.Error()
+		a.render(w, "share_create.html", "Create Share", form)
+		return
+	}
+
+	// 2) Ensure shares index references that share file
+	if err := samba.EnsureIndexReferencesShare(indexPath, form.Name, shareFile); err != nil {
+		form.Error = "failed to update shares index: " + err.Error()
+		a.render(w, "share_create.html", "Create Share", form)
+		return
+	}
+
+	// 3) Reload Samba
+	if err := samba.ReloadConfig(); err != nil {
+		form.Error = "reload failed: " + err.Error()
+		a.render(w, "share_create.html", "Create Share", form)
+		return
+	}
+
+	http.Redirect(w, r, "/shares", http.StatusSeeOther)
 }
