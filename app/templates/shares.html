@@ -15,6 +15,7 @@
           <th>Path</th>
           <th>read only</th>
           <th>Path check</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -31,6 +32,23 @@
               <span class="badge text-bg-warning">WARN</span>
               <span class="text-muted ms-2 small">{{ .Perms }}</span>
             {{ end }}
+          </td>
+          <td class="text-nowrap">
+            <form class="d-inline" method="post" action="/shares/disable">
+              <input type="hidden" name="name" value="{{ .Name }}">
+              <button class="btn btn-sm btn-outline-warning" type="submit">Disable</button>
+            </form>
+
+            <form class="d-inline" method="post" action="/shares/enable">
+              <input type="hidden" name="name" value="{{ .Name }}">
+              <button class="btn btn-sm btn-outline-success" type="submit">Enable</button>
+            </form>
+
+            <form class="d-inline" method="post" action="/shares/delete"
+                  onsubmit="return confirm('Hard delete share {{ .Name }}? This removes index entry and deletes the snippet file.');">
+              <input type="hidden" name="name" value="{{ .Name }}">
+              <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+            </form>
           </td>
         </tr>
         {{ end }}

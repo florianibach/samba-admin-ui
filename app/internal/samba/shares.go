@@ -30,28 +30,6 @@ func CheckSmbConfIncludesIndex(smbConfPath string, indexPath string) error {
 	return nil
 }
 
-func EnsureIndexReferencesShare(indexPath string, shareName string, shareFilePath string) error {
-	if err := os.MkdirAll(filepath.Dir(indexPath), 0755); err != nil {
-		return err
-	}
-
-	var existing string
-	if b, err := os.ReadFile(indexPath); err == nil {
-		existing = string(b)
-	}
-
-	// If already referenced, do nothing
-	if strings.Contains(existing, shareFilePath) {
-		return nil
-	}
-
-	// Append new section that includes the share file
-	block := fmt.Sprintf("\n[%s]\n   include = %s\n", shareName, shareFilePath)
-	newContent := existing + block
-
-	return os.WriteFile(indexPath, []byte(newContent), 0644)
-}
-
 type CreateShareOptions struct {
 	Name       string
 	Path       string

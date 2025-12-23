@@ -64,6 +64,9 @@ func main() {
 	mux.HandleFunc("/users/delete", app.userDelete)
 
 	mux.HandleFunc("/shares/create", app.shareCreate)
+	mux.HandleFunc("/shares/disable", app.shareDisable)
+	mux.HandleFunc("/shares/enable", app.shareEnable)
+	mux.HandleFunc("/shares/delete", app.shareDelete)
 
 	log.Printf("samba-admin-ui listening on %s", addr)
 	log.Fatal(http.ListenAndServe(addr, withHeaders(mux)))
@@ -515,5 +518,89 @@ func (a *App) shareCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	http.Redirect(w, r, "/shares", http.StatusSeeOther)
+}
+
+func (a *App) shareDisable(w http.ResponseWriter, r *http.Request) {
+	a.setShareDisabled(w, r, true)
+}
+
+func (a *App) shareEnable(w http.ResponseWriter, r *http.Request) {
+	a.setShareDisabled(w, r, false)
+}
+
+func (a *App) setShareDisabled(w http.ResponseWriter, r *http.Request, disabled bool) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/shares", http.StatusSeeOther)
+		return
+	}
+	_ = r.ParseForm()
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		http.Error(w, "name required", 400)
+		return
+	}
+
+	sharesDir := getenv("UI_SHARES_DIR", "/etc/samba/shares.d/ui")
+	indexPath := getenv("UI_SHARES_INDEX", "/etc/samba/shares.d/ui/shares.conf")
+
+	// require include exists in smb.conf
+	if err := samba.CheckSmbConfIncludesIndex(a.smbConf, indexPath); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	shareFile := filepath.Join(sharesDir, name+".conf")
+
+	// Ensure index entry exists (best effort)
+	_ = samba.EnsureIndexReferencesShare(indexPath, name, shareFile)
+
+	if err := samba.SetShareDisabled(indexPath, name, shareFile, disabled); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if err := samba.ReloadConfig(); err != nil {
+		http.Error(w, "reload failed: "+err.Error(), 500)
+		return
+	}
+	http.Redirect(w, r, "/shares", http.StatusSeeOther)
+}
+
+func (a *App) shareDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/shares", http.StatusSeeOther)
+		return
+	}
+	_ = r.ParseForm()
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		http.Error(w, "name required", 400)
+		return
+	}
+
+	sharesDir := getenv("UI_SHARES_DIR", "/etc/samba/shares.d/ui")
+	indexPath := getenv("UI_SHARES_INDEX", "/etc/samba/shares.d/ui/shares.conf")
+
+	if err := samba.CheckSmbConfIncludesIndex(a.smbConf, indexPath); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	shareFile := filepath.Join(sharesDir, name+".conf")
+
+	// Remove from index (only if managed marker exists)
+	if err := samba.RemoveShareFromIndex(indexPath, name); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// Delete share snippet file (ignore if missing)
+	_ = os.Remove(shareFile)
+
+	if err := samba.ReloadConfig(); err != nil {
+		http.Error(w, "reload failed: "+err.Error(), 500)
+		return
+	}
 	http.Redirect(w, r, "/shares", http.StatusSeeOther)
 }
