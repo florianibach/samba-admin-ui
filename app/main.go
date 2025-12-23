@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -177,6 +178,19 @@ func (a *App) shares(w http.ResponseWriter, r *http.Request) {
 		})
 
 	}
+
+	sort.Slice(rows, func(i, j int) bool {
+		// UI-managed shares first
+		if rows[i].Managed != rows[j].Managed {
+			return rows[i].Managed && !rows[j].Managed
+		}
+		// Within managed: enabled first, then disabled
+		if rows[i].Disabled != rows[j].Disabled {
+			return !rows[i].Disabled && rows[j].Disabled
+		}
+		// Finally: alphabetical by name (case-insensitive)
+		return strings.ToLower(rows[i].Name) < strings.ToLower(rows[j].Name)
+	})
 
 	a.render(w, "shares.html", "Shares", vm{
 		SmbConf: a.smbConf,
