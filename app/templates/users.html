@@ -1,6 +1,6 @@
 {{ define "content" }}
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h3 mb-0">Samba Users</h1>
+  <h1 class="h3 mb-0">Users</h1>
 </div>
 
 <div class="card mt-4">
@@ -41,6 +41,48 @@
 {{ if .Data.Error }}
   <div class="alert alert-danger">{{ .Data.Error }}</div>
 {{ else }}
+
+<h2 class="mt-4">Linux Users</h2>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>UID</th>
+            <th>GIDs</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{ range .Data.LinuxUsers }}
+          <tr>
+            <td>{{ .Name }}</td>
+            <td>{{ .UID }}</td>
+            <td>
+              {{ range $i, $g := .GIDs }}
+                {{ if $i }}, {{ end }}{{ $g }}
+              {{ end }}
+            </td>
+          </tr>
+          {{ else }}
+          <tr>
+            <td colspan="3" class="text-muted">No linux users found.</td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-text">
+      Showing users with UID &gt;= 1000.
+    </div>
+  </div>
+</div>
+
+<h2 class="mt-4">Samba Users</h2>
+
   <div class="table-responsive">
     <table class="table table-sm align-middle">
       <thead>

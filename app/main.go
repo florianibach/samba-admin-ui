@@ -271,8 +271,9 @@ func (a *App) users(w http.ResponseWriter, r *http.Request) {
 		LinuxExists bool
 	}
 	type vm struct {
-		Error string
-		Users []userRow
+		Error      string
+		Users      []userRow
+		LinuxUsers []samba.LinuxUserInfo
 	}
 
 	users, err := samba.ListSambaUsers()
@@ -289,7 +290,15 @@ func (a *App) users(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	a.render(w, "users.html", "Users", vm{Users: rows})
+	linuxUsers, err := samba.ListLinuxUsersHuman()
+	if err != nil {
+		linuxUsers = []samba.LinuxUserInfo{}
+	}
+
+	a.render(w, "users.html", "Users", vm{
+		Users:      rows,
+		LinuxUsers: linuxUsers,
+	})
 }
 
 func (a *App) reload(w http.ResponseWriter, r *http.Request) {
