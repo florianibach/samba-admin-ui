@@ -50,6 +50,8 @@ func main() {
 		base:      base,
 		smbConf:   smbConf,
 		shareRoot: shareRoot,
+
+		lastReload: time.Now(),
 	}
 
 	dbPath := getenv("APP_DB", "/data/app.db")
