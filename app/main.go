@@ -351,62 +351,52 @@ func (a *App) userCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pw := r.FormValue("password")
-	pw2 := r.FormValue("password_confirm")
-
-	if pw != pw2 {
-		http.Error(w, "passwords do not match", http.StatusBadRequest)
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		http.Error(w, "name required", 400)
 		return
 	}
 
-	req := CreateUserRequest{
-		Name:     strings.TrimSpace(r.FormValue("name")),
-		Password: r.FormValue("password"),
-		UID:      strings.TrimSpace(r.FormValue("uid")),
-		GID:      strings.TrimSpace(r.FormValue("gid")),
+	uid, err := parseOptionalInt(r.FormValue("uid"))
+	if err != nil {
+		http.Error(w, "invalid uid", 400)
+		return
 	}
-	if req.Name == "" || req.Password == "" {
-		http.Error(w, "name and password required", 400)
+	gid, err := parseOptionalInt(r.FormValue("gid"))
+	if err != nil {
+		http.Error(w, "invalid gid", 400)
 		return
 	}
 
-	var uidPtr *int
-	var gidPtr *int
-	if req.UID != "" {
-		v, err := strconv.Atoi(req.UID)
-		if err != nil {
-			http.Error(w, "uid must be numeric", 400)
-			return
-		}
-		uidPtr = &v
-	}
-	if req.GID != "" {
-		v, err := strconv.Atoi(req.GID)
-		if err != nil {
-			http.Error(w, "gid must be numeric", 400)
-			return
-		}
-		gidPtr = &v
+	// 1) Desired state speichern
+	if err := a.store.UpsertUser(state.User{
+		Name: name,
+		UID:  uid,
+		GID:  gid,
+	}); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
 	}
 
-	// Ensure linux user exists
-	if !samba.LinuxUserExists(req.Name) {
-		if err := samba.CreateLinuxUser(req.Name, uidPtr, gidPtr); err != nil {
-			http.Error(w, "create linux user failed: "+err.Error(), 500)
-			return
-		}
-	}
-
-	// Create samba user (or update password if already exists)
-	if err := samba.CreateSambaUser(req.Name, req.Password); err != nil {
-		// fallback: if already exists, set password
-		if err2 := samba.SetSambaPassword(req.Name, req.Password); err2 != nil {
-			http.Error(w, "create samba user failed: "+err.Error(), 500)
-			return
-		}
+	// 2) Apply (OS anpassen)
+	if _, err := reconcile.Apply(a.store); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
 	}
 
 	http.Redirect(w, r, "/users", http.StatusSeeOther)
+}
+
+func parseOptionalInt(v string) (*int, error) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return nil, nil
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return nil, err
+	}
+	return &n, nil
 }
 
 func (a *App) userPassword(w http.ResponseWriter, r *http.Request) {

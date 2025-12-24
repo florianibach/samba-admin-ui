@@ -20,8 +20,11 @@ func Open(path string) (*Store, error) {
 		_ = db.Close()
 		return nil, err
 	}
+
 	return s, nil
 }
+
+func (s *Store) Close() error { return s.DB.Close() }
 
 func (s *Store) migrate() error {
 	_, err := s.DB.Exec(`

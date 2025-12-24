@@ -33,6 +33,5 @@ services:
       - /home/florian/usbdrv/samba-admin-ui/log:/var/log/samba
         # Samba users (VERY IMPORTANT)
       - /home/florian/usbdrv/samba-admin-ui/samba-lib:/var/lib/samba
-
+        # share
       - /home/florian/usbdrv/:/shares
-      
