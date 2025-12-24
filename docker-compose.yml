@@ -27,12 +27,12 @@ services:
 
     volumes:
       # Persist Samba config + passdb
-      - /home/florian/usbdrv/samba-admin-ui/data/samba:/etc/samba
-
-      # Deine Host-Daten (Beispiel)
-      - /home/florian/usbdrv/:/shares
-
+      - /home/florian/usbdrv/samba-admin-ui/samba:/etc/samba
+      - /home/florian/usbdrv/samba-admin-ui/data/:/data
       # Optional: Logs
-      - /home/florian/usbdrv/samba-admin-ui/data/log:/var/log/samba
+      - /home/florian/usbdrv/samba-admin-ui/log:/var/log/samba
         # Samba users (VERY IMPORTANT)
-      - /home/florian/usbdrv/samba-admin-ui/data/samba-lib:/var/lib/samba
+      - /home/florian/usbdrv/samba-admin-ui/samba-lib:/var/lib/samba
+
+      - /home/florian/usbdrv/:/shares
+      

@@ -12,7 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/florianibach/samba-admin-ui/internal/reconcile"
 	"github.com/florianibach/samba-admin-ui/internal/samba"
+	"github.com/florianibach/samba-admin-ui/internal/state"
 )
 
 //go:embed templates/*.html
@@ -30,6 +32,7 @@ type App struct {
 	base      *template.Template
 	smbConf   string
 	shareRoot string
+	store     *state.Store
 
 	lastReload time.Time
 }
@@ -47,6 +50,19 @@ func main() {
 		base:      base,
 		smbConf:   smbConf,
 		shareRoot: shareRoot,
+	}
+
+	dbPath := getenv("APP_DB", "/data/app.db")
+	store, err := state.Open(dbPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	app.store = store
+
+	if getenv("RECONCILE_ON_START", "true") == "true" {
+		if _, err := reconcile.Apply(store); err != nil {
+			log.Printf("reconcile failed: %v", err)
+		}
 	}
 
 	mux := http.NewServeMux()
