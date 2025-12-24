@@ -12,7 +12,12 @@
       <div class="card-body">
         <div class="fw-semibold mb-2">Config</div>
         <div class="small text-muted mb-2">SMB_CONF: <code>{{ .Data.SmbConf }}</code></div>
-
+        {{ if .Data.LastReload }}
+          <div class="small text-muted">Last reload: <code>{{ .Data.LastReload }}</code></div>
+        {{ else }}
+          <div class="small text-muted">Last reload: <span class="text-muted">-</span></div>
+        {{ end }}
+        
         {{ if .Data.ConfigOK }}
           <div class="alert alert-success mb-0">testparm: OK</div>
         {{ else }}
@@ -34,12 +39,6 @@
           <div class="alert alert-success mb-2">smbd: running</div>
         {{ else }}
           <div class="alert alert-warning mb-2">smbd: not running ({{ .Data.SmbdErr }})</div>
-        {{ end }}
-
-        {{ if .Data.LastReload }}
-          <div class="small text-muted">Last reload: <code>{{ .Data.LastReload }}</code></div>
-        {{ else }}
-          <div class="small text-muted">Last reload: <span class="text-muted">-</span></div>
         {{ end }}
       </div>
     </div>
