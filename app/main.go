@@ -368,6 +368,17 @@ func (a *App) userCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	pass := r.FormValue("password")
+	confirm := r.FormValue("password_confirm")
+	if pass == "" || confirm == "" {
+		http.Error(w, "password required", 400)
+		return
+	}
+	if pass != confirm {
+		http.Error(w, "passwords do not match", 400)
+		return
+	}
+
 	uid, err := parseOptionalInt(r.FormValue("uid"))
 	if err != nil {
 		http.Error(w, "invalid uid", 400)
@@ -379,7 +390,6 @@ func (a *App) userCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1) Desired state speichern
 	if err := a.store.UpsertUser(state.User{
 		Name: name,
 		UID:  uid,
@@ -389,8 +399,12 @@ func (a *App) userCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2) Apply (OS anpassen)
 	if _, err := reconcile.Apply(a.store); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if err := samba.CreateSambaUser(name, pass); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
