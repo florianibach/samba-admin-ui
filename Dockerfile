@@ -1,8 +1,12 @@
 FROM golang:1.25.5-alpine AS build
 WORKDIR /app
-COPY go.mod ./
+COPY app/go.mod app/go.sum ./
 RUN go mod download
-COPY . .
+
+RUN go mod download
+COPY app/ ./
+COPY entrypoint.sh ./
+
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/samba-admin-ui ./main.go
 
 FROM debian:bookworm-slim
@@ -18,8 +22,8 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --from=build /out/samba-admin-ui /app/samba-admin-ui
-COPY templates /app/templates
-COPY static /app/static
+COPY /app/templates /app/templates
+COPY /app/static /app/static
 COPY entrypoint.sh /app/entrypoint.sh
 
 RUN chmod +x /app/entrypoint.sh \

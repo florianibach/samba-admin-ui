@@ -1,7 +1,7 @@
 services:
   samba-admin-ui:
-    build:
-      context: ./app
+    build: .
+      #context: ./app
     container_name: samba-admin-ui
     restart: unless-stopped
 
