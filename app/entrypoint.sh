@@ -28,7 +28,6 @@ chmod 0700 /var/lib/samba/private
 
 
 # Start Samba daemons in background
-# (This is MVP-grade; later you may want s6/supervisor for robustness.)
 mkdir -p /run/samba /var/log/samba
 smbd -F --no-process-group &
 nmbd -F --no-process-group &

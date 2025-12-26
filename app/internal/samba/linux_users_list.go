@@ -14,7 +14,6 @@ type LinuxUserInfo struct {
 	GIDs []int
 }
 
-// MVP: only “human” users (UID >= 1000), excluding nobody.
 func ListLinuxUsersHuman() ([]LinuxUserInfo, error) {
 	out, err := exec.Command("getent", "passwd").Output()
 	if err != nil {

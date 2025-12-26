@@ -369,7 +369,7 @@ func (a *App) userCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pass := r.FormValue("password")
-	confirm := r.FormValue("password_confirm")
+	confirm := r.FormValue("confirm_password")
 	if pass == "" || confirm == "" {
 		http.Error(w, "password required", 400)
 		return
