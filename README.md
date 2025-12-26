@@ -1,5 +1,10 @@
 # samba-admin-ui
 
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/florianibach/samba-admin-ui)
+
+[![DockerHub Repo](https://img.shields.io/badge/Docker_Hub-Repository-blue?logo=docker)](https://hub.docker.com/r/floibach/samba-admin-ui)
+
+
 A simple web UI to manage Samba users and shares for homelab environments.
 
 This project is intentionally minimal and opinionated: it focuses on the most common Samba tasks without trying to replace full system configuration or enterprise tooling.
@@ -11,7 +16,7 @@ If it helps you or saves you some time, you can support my work on [![BuyMeACoff
 Thank you for your support!
 
 
-## ✨ Features
+## Features
 
 ### Samba
 - List Samba users
@@ -32,10 +37,11 @@ Thank you for your support!
 - Linux users are created automatically on container start if missing
 - Samba configuration (`smb.conf`) is mounted read-only
 - No direct editing of system files through the UI
+- Runs on Raspberry Pi
 
 ---
 
-## 🚫 Non-Goals
+## Non-Goals
 
 This project deliberately does **not** aim to:
 - Replace full Samba configuration management
@@ -47,7 +53,7 @@ This is a **homelab-focused tool**.
 
 ---
 
-## 🐳 Docker Usage
+## Docker Usage
 
 ### Minimal `docker-compose.yml`
 
@@ -83,7 +89,7 @@ http://localhost:8080
 
 ---
 
-## ⚠️ Important Notes
+## Important Notes
 
 * The container runs as **root** to manage Samba and Linux users.
 * Linux users are created without passwords and with `nologin`.
@@ -92,7 +98,7 @@ http://localhost:8080
 
 ---
 
-## 📦 Data Persistence
+## Data Persistence
 
 You should persist at least:
 
@@ -102,7 +108,7 @@ You should persist at least:
 
 ---
 
-## 🧭 Project Status
+## Project Status
 
 **MVP – stable and usable**
 
@@ -115,28 +121,8 @@ Planned post-MVP features:
 
 ---
 
-## 📝 License
+## License
 
 MIT
 
-```
-
----
-
-## ✅ Was du jetzt noch tun kannst (optional, aber empfehlenswert)
-
-- Version taggen (`v0.1.0`)
-- GitHub Release erstellen
-- Docker Image pushen (`latest` + Version)
-
-👉 Danach hast du:
-- ein **echtes MVP**
-- ein Projekt, das man guten Gewissens teilen kann
-- eine stabile Basis für Version 1.0
-
-Wenn du willst, helfe ich dir im nächsten Schritt gern noch bei:
-- GitHub Action für Multi-Arch Docker Builds  
-- Versioning-Strategie (`v0.x` → `v1.0`)  
-
-Aber für den Moment: **Glückwunsch, MVP abgeschlossen** 👏
 ```
