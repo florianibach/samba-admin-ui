@@ -1,0 +1,86 @@
+{{ define "content" }}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="m-0">Groups</h1>
+</div>
+
+{{ if .Data.Error }}
+<div class="alert alert-danger" role="alert">
+  {{ .Data.Error }}
+</div>
+{{ end }}
+
+<div class="card mb-4">
+  <div class="card-body">
+    <h5 class="card-title">Create Group</h5>
+
+    <form method="post" action="/groups/create" class="row g-2">
+      <div class="col-12 col-md-6">
+        <label class="form-label">Name</label>
+        <input class="form-control" name="name" placeholder="parents" required>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">GID (optional)</label>
+        <input class="form-control" name="gid" placeholder="10050">
+      </div>
+
+      <div class="col-12 col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">Configured Groups (DB)</h5>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>GID</th>
+            <th>Linux</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{ range .Data.Groups }}
+          <tr>
+            <td>{{ .Name }}</td>
+            <td>{{ .GID }}</td>
+            <td>
+              {{ if .LinuxExists }}
+                <span class="badge text-bg-success">exists</span>
+              {{ else }}
+                <span class="badge text-bg-warning">missing</span>
+              {{ end }}
+            </td>
+            <td class="text-end">
+              <form method="post" action="/groups/delete" class="d-inline">
+                <input type="hidden" name="name" value="{{ .Name }}">
+                <button class="btn btn-sm btn-outline-danger" type="submit"
+                        onclick="return confirm('Delete group {{ .Name }}?');">
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {{ else }}
+          <tr>
+            <td colspan="4" class="text-muted">No groups configured.</td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="form-text">
+      Note: Linux groups will be created on container start (reconcile).
+    </div>
+  </div>
+</div>
+
+{{ end }}

@@ -74,6 +74,7 @@ func main() {
 	mux.HandleFunc("/shares", app.shares)
 	mux.HandleFunc("/shares/", app.shareDetail) // /shares/{name}
 	mux.HandleFunc("/users", app.users)
+	mux.HandleFunc("/groups", app.groups)
 	mux.HandleFunc("/reload", app.reload)
 
 	mux.HandleFunc("/users/create", app.userCreate)
@@ -81,6 +82,9 @@ func main() {
 	mux.HandleFunc("/users/enable", app.userEnable)
 	mux.HandleFunc("/users/disable", app.userDisable)
 	mux.HandleFunc("/users/delete", app.userDelete)
+
+	mux.HandleFunc("/groups/create", app.groupsCreate)
+	mux.HandleFunc("/groups/delete", app.groupsDelete)
 
 	mux.HandleFunc("/shares/create", app.shareCreate)
 	mux.HandleFunc("/shares/disable", app.shareDisable)
@@ -663,4 +667,107 @@ func (a *App) shareDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/shares", http.StatusSeeOther)
+}
+
+func (a *App) groups(w http.ResponseWriter, r *http.Request) {
+	type groupRow struct {
+		Name        string
+		GID         string
+		LinuxExists bool
+	}
+
+	type vm struct {
+		Error  string
+		Groups []groupRow
+	}
+
+	groups, err := a.store.ListGroups()
+	if err != nil {
+		a.render(w, "groups.html", "Groups", vm{Error: err.Error()})
+		return
+	}
+
+	rows := make([]groupRow, 0, len(groups))
+	for _, g := range groups {
+		gid := ""
+		if g.GID != nil {
+			gid = strconv.Itoa(*g.GID)
+		}
+
+		rows = append(rows, groupRow{
+			Name:        g.Name,
+			GID:         gid,
+			LinuxExists: samba.LinuxGroupExists(g.Name),
+		})
+	}
+
+	a.render(w, "groups.html", "Groups", vm{Groups: rows})
+}
+
+func (a *App) groupsCreate(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/groups", http.StatusSeeOther)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		http.Redirect(w, r, "/groups", http.StatusSeeOther)
+		return
+	}
+
+	gid, err := parseOptionalInt(strings.TrimSpace(r.FormValue("gid")))
+	if err != nil {
+		http.Error(w, "invalid gid", 400)
+		return
+	}
+
+	if err := a.store.UpsertGroup(state.Group{
+		Name: name,
+		GID:  gid,
+	}); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if _, err := reconcile.Apply(a.store); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	http.Redirect(w, r, "/groups", http.StatusSeeOther)
+}
+
+func (a *App) groupsDelete(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/groups", http.StatusSeeOther)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	name := strings.TrimSpace(r.FormValue("name"))
+	if name == "" {
+		http.Redirect(w, r, "/groups", http.StatusSeeOther)
+		return
+	}
+
+	// MVP: einfach löschen (DB). Später: blocken wenn noch assignments existieren.
+	if err := a.store.DeleteGroup(name); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if _, err := reconcile.Apply(a.store); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	http.Redirect(w, r, "/groups", http.StatusSeeOther)
 }
