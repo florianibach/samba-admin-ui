@@ -6,7 +6,7 @@ on:
     paths-ignore:
       - "README.md"
       - ".github/workflows/dockerhub-description.yml"
-      - ".github/ISSUE_TEMPLATE"
+      - ".github/ISSUE_TEMPLATE/*"
       
 jobs:
   docker:
