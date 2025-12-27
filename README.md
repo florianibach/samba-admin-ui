@@ -69,7 +69,7 @@ services:
       - ./samba-admin-ui/samba/smb.conf:/etc/samba/smb.conf:ro      
 
       # UI-managed share definitions
-      - ./samba-admin-ui/samba/shares.d:/etc/samba/shares.d
+      - ./samba-admin-ui/samba:/etc/samba
 
       # Samba internal databases (users, passwords, state)
       - ./samba-admin-ui/samba-lib:/var/lib/samba
