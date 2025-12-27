@@ -53,6 +53,7 @@
             <th>User</th>
             <th>UID</th>
             <th>GIDs</th>
+            <td>Actions</td>
           </tr>
         </thead>
         <tbody>
@@ -64,6 +65,9 @@
               {{ range $i, $g := .GIDs }}
                 {{ if $i }}, {{ end }}{{ $g }}
               {{ end }}
+            </td>
+            <td>
+              <a class="btn btn-sm btn-outline-secondary" href="/users/groups?user={{ .Name }}">Groups</a>
             </td>
           </tr>
           {{ else }}

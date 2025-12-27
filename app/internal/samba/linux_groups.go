@@ -84,3 +84,26 @@ func IsPrimaryGroupGIDUsed(gid int) (bool, error) {
 	}
 	return false, nil
 }
+
+func GetUserGroups(user string) ([]string, error) {
+	out, errStr, code, err := run(3*time.Second, "id", "-nG", user)
+	if err != nil && code == 0 {
+		return nil, err
+	}
+	if code != 0 {
+		return nil, fmt.Errorf("id -nG failed: %s", strings.TrimSpace(errStr))
+	}
+	return strings.Fields(out), nil
+}
+
+// Sets supplementary groups exactly to the given list.
+// IMPORTANT: do not include the primary group here.
+func SetUserSupplementaryGroups(user string, groups []string) error {
+	// usermod -G grp1,grp2 user
+	arg := strings.Join(groups, ",")
+	_, errStr, code, _ := run(5*time.Second, "usermod", "-G", arg, user)
+	if code != 0 {
+		return fmt.Errorf("usermod -G failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
+}

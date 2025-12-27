@@ -86,6 +86,9 @@ func main() {
 	mux.HandleFunc("/groups/create", app.groupsCreate)
 	mux.HandleFunc("/groups/delete", app.groupsDelete)
 
+	mux.HandleFunc("/users/groups", app.userGroups)          // GET (Form)
+	mux.HandleFunc("/users/groups/save", app.userGroupsSave) // POST
+
 	mux.HandleFunc("/shares/create", app.shareCreate)
 	mux.HandleFunc("/shares/disable", app.shareDisable)
 	mux.HandleFunc("/shares/enable", app.shareEnable)
@@ -823,4 +826,116 @@ func (a *App) groupsDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, "/groups", http.StatusSeeOther)
+}
+
+func (a *App) userGroups(w http.ResponseWriter, r *http.Request) {
+	user := strings.TrimSpace(r.URL.Query().Get("user"))
+	if user == "" {
+		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		return
+	}
+
+	type groupRow struct {
+		Name     string
+		Selected bool
+	}
+
+	type vm struct {
+		Error  string
+		User   string
+		Groups []groupRow
+	}
+
+	// groups to show: DB groups (managed)
+	groups, err := a.store.ListGroups()
+	if err != nil {
+		a.render(w, "user_groups.html", "User Groups", vm{Error: err.Error(), User: user})
+		return
+	}
+
+	selected, err := a.store.ListUserGroups(user)
+	if err != nil {
+		a.render(w, "user_groups.html", "User Groups", vm{Error: err.Error(), User: user})
+		return
+	}
+	selectedSet := map[string]bool{}
+	for _, g := range selected {
+		selectedSet[g] = true
+	}
+
+	rows := make([]groupRow, 0, len(groups))
+	for _, g := range groups {
+		rows = append(rows, groupRow{
+			Name:     g.Name,
+			Selected: selectedSet[g.Name],
+		})
+	}
+
+	a.render(w, "user_groups.html", "User Groups", vm{
+		User:   user,
+		Groups: rows,
+	})
+}
+
+func (a *App) userGroupsSave(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	user := strings.TrimSpace(r.FormValue("user"))
+	if user == "" {
+		http.Redirect(w, r, "/users", http.StatusSeeOther)
+		return
+	}
+
+	// Checkbox values: name="groups" value="parents"
+	selected := r.Form["groups"]
+
+	// 1) DB state setzen (ersetzen)
+	if err := a.store.SetUserGroups(user, selected); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// 2) Apply on OS
+	// - sicherstellen, dass Linux user existiert (falls du das so willst)
+	// - sicherstellen, dass Gruppen existieren (falls du nur DB groups erlaubst)
+	// - usermod -aG nur für Selected: das fügt hinzu, entfernt aber NICHT.
+	//   -> für Entfernen brauchen wir was anderes (siehe Hinweis unten)
+	if !samba.LinuxUserExists(user) {
+		// wenn du willst: reconcile oder create linux user hier
+		// für MVP: Fehler
+		http.Error(w, "linux user does not exist", 400)
+		return
+	}
+
+	// Ensure groups exist and add user to them
+	for _, g := range selected {
+		if !samba.LinuxGroupExists(g) {
+			// optional: aus DB GID holen und CreateLinuxGroup(...)
+			if err := samba.CreateLinuxGroup(g, nil); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+		in, err := samba.IsUserInGroup(user, g)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		if !in {
+			if err := samba.AddUserToGroup(user, g); err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+		}
+	}
+
+	// Redirect zurück
+	http.Redirect(w, r, "/users", http.StatusSeeOther)
 }
