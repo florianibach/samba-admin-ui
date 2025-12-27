@@ -771,12 +771,53 @@ func (a *App) groupsDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := a.store.DeleteGroup(name); err != nil {
+	// 1) Nur managed groups löschen (optional, aber sinnvoll)
+	grp, ok, err := a.store.GetGroup(name)
+	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
+	if !ok {
+		// nichts zu tun
+		http.Redirect(w, r, "/groups", http.StatusSeeOther)
+		return
+	}
 
-	if _, err := reconcile.Apply(a.store); err != nil {
+	// 2) DB-Assignments blocken
+	cnt, err := a.store.CountGroupAssignments(name)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	if cnt > 0 {
+		http.Error(w, "cannot delete group: users are still assigned in DB", 400)
+		return
+	}
+
+	// 3) Linux-Delete nur versuchen, wenn Gruppe existiert
+	if samba.LinuxGroupExists(name) {
+		// Primärgruppe-Check (wenn wir die GID kennen)
+		if grp.GID != nil {
+			used, err := samba.IsPrimaryGroupGIDUsed(*grp.GID)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
+				return
+			}
+			if used {
+				http.Error(w, "cannot delete group: it is the primary group of at least one Linux user", 400)
+				return
+			}
+		}
+
+		// groupdel
+		if err := samba.DeleteLinuxGroup(name); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+	}
+
+	// 4) Danach DB löschen
+	if err := a.store.DeleteGroup(name); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}

@@ -58,26 +58,17 @@
                 <span class="badge text-bg-secondary">system</span>
             {{ end }}
             </td>
-            {{ if .Managed }}
+            <td>
+              {{ if .Managed }}
                 <form method="post" action="/groups/delete" class="d-inline">
-                <input type="hidden" name="name" value="{{ .Name }}">
-                <button class="btn btn-sm btn-outline-danger" type="submit"
-                        onclick="return confirm('Unmanage group {{ .Name }}? (DB only)');">
-                    Unmanage
-                </button>
+                  <input type="hidden" name="name" value="{{ .Name }}">
+                  <button class="btn btn-sm btn-outline-danger" type="submit"
+                          onclick="return confirm('Delete group {{ .Name }} from Linux + DB?');">
+                    Delete
+                  </button>
                 </form>
                 {{ end }}
-                <td>
-                  {{ if .Managed }}
-                  <form method="post" action="/groups/delete" class="d-inline">
-                    <input type="hidden" name="name" value="{{ .Name }}">
-                    <button class="btn btn-sm btn-outline-danger" type="submit"
-                            onclick="return confirm('Unmanage group {{ .Name }}? (DB only)');">
-                      Unmanage
-                    </button>
-                  </form>
-                  {{ end }}
-                </td>
+            </td>
           </tr>
           {{ else }}
           <tr>

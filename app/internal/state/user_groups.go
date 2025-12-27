@@ -63,3 +63,12 @@ func (s *Store) ListMemberships() ([]Membership, error) {
 	}
 	return out, rows.Err()
 }
+
+func (s *Store) CountGroupAssignments(group string) (int, error) {
+	row := s.DB.QueryRow(`SELECT COUNT(*) FROM user_groups WHERE group_name = ?`, group)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		return 0, err
+	}
+	return n, nil
+}

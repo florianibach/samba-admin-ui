@@ -57,3 +57,30 @@ func DeleteLinuxGroup(name string) error {
 	}
 	return nil
 }
+
+// true wenn irgendein User diese GID als Primärgruppe hat
+func IsPrimaryGroupGIDUsed(gid int) (bool, error) {
+	out, errStr, code, err := run(3*time.Second, "getent", "passwd")
+	if err != nil && code == 0 {
+		return false, err
+	}
+	if code != 0 {
+		return false, fmt.Errorf("getent passwd failed: %s", strings.TrimSpace(errStr))
+	}
+
+	for _, line := range strings.Split(strings.TrimSpace(out), "\n") {
+		// name:x:uid:gid:...
+		parts := strings.Split(line, ":")
+		if len(parts) < 4 {
+			continue
+		}
+		pgid, convErr := strconv.Atoi(parts[3])
+		if convErr != nil {
+			continue
+		}
+		if pgid == gid {
+			return true, nil
+		}
+	}
+	return false, nil
+}

@@ -1,5 +1,10 @@
 package state
 
+import (
+	"database/sql"
+	"errors"
+)
+
 func (s *Store) ListGroups() ([]Group, error) {
 	rows, err := s.DB.Query(`SELECT name, gid FROM groups ORDER BY name`)
 	if err != nil {
@@ -31,4 +36,16 @@ func (s *Store) UpsertGroup(g Group) error {
 func (s *Store) DeleteGroup(name string) error {
 	_, err := s.DB.Exec(`DELETE FROM groups WHERE name = ?`, name)
 	return err
+}
+
+func (s *Store) GetGroup(name string) (Group, bool, error) {
+	row := s.DB.QueryRow(`SELECT name, gid FROM groups WHERE name = ?`, name)
+	var g Group
+	if err := row.Scan(&g.Name, &g.GID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Group{}, false, nil
+		}
+		return Group{}, false, err
+	}
+	return g, true, nil
 }
