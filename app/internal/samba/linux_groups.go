@@ -85,6 +85,17 @@ func IsPrimaryGroupGIDUsed(gid int) (bool, error) {
 	return false, nil
 }
 
+func GetPrimaryGroupName(user string) (string, error) {
+	out, errStr, code, err := run(3*time.Second, "id", "-gn", user)
+	if err != nil && code == 0 {
+		return "", err
+	}
+	if code != 0 {
+		return "", fmt.Errorf("id -gn failed: %s", strings.TrimSpace(errStr))
+	}
+	return strings.TrimSpace(out), nil
+}
+
 func GetUserGroups(user string) ([]string, error) {
 	out, errStr, code, err := run(3*time.Second, "id", "-nG", user)
 	if err != nil && code == 0 {

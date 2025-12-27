@@ -893,49 +893,96 @@ func (a *App) userGroupsSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Checkbox values: name="groups" value="parents"
+	// Selected managed groups from checkboxes
 	selected := r.Form["groups"]
 
-	// 1) DB state setzen (ersetzen)
+	// --- helpers ---
+	uniqueSorted := func(set map[string]bool) []string {
+		res := make([]string, 0, len(set))
+		for k := range set {
+			res = append(res, k)
+		}
+		sort.Slice(res, func(i, j int) bool {
+			return strings.ToLower(res[i]) < strings.ToLower(res[j])
+		})
+		return res
+	}
+
+	// 1) Persist desired state in DB
 	if err := a.store.SetUserGroups(user, selected); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	// 2) Apply on OS
-	// - sicherstellen, dass Linux user existiert (falls du das so willst)
-	// - sicherstellen, dass Gruppen existieren (falls du nur DB groups erlaubst)
-	// - usermod -aG nur für Selected: das fügt hinzu, entfernt aber NICHT.
-	//   -> für Entfernen brauchen wir was anderes (siehe Hinweis unten)
+	// 2) Apply to Linux
+
+	// user must exist on Linux for group assignment
 	if !samba.LinuxUserExists(user) {
-		// wenn du willst: reconcile oder create linux user hier
-		// für MVP: Fehler
 		http.Error(w, "linux user does not exist", 400)
 		return
 	}
 
-	// Ensure groups exist and add user to them
+	// 2a) Determine which groups are "managed" (all groups present in DB)
+	dbGroups, err := a.store.ListGroups()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	managedSet := make(map[string]bool, len(dbGroups))
+	for _, g := range dbGroups {
+		managedSet[g.Name] = true
+	}
+
+	// 2b) Ensure selected groups exist on Linux (optionally with GID)
+	// If you want to respect DB GID, do it here:
+	dbByName := map[string]*int{}
+	for _, g := range dbGroups {
+		dbByName[g.Name] = g.GID
+	}
 	for _, g := range selected {
-		if !samba.LinuxGroupExists(g) {
-			// optional: aus DB GID holen und CreateLinuxGroup(...)
-			if err := samba.CreateLinuxGroup(g, nil); err != nil {
-				http.Error(w, err.Error(), 500)
-				return
-			}
+		if samba.LinuxGroupExists(g) {
+			continue
 		}
-		in, err := samba.IsUserInGroup(user, g)
-		if err != nil {
+		// create with desired gid if known
+		if err := samba.CreateLinuxGroup(g, dbByName[g]); err != nil {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		if !in {
-			if err := samba.AddUserToGroup(user, g); err != nil {
-				http.Error(w, err.Error(), 500)
-				return
-			}
+	}
+
+	// 2c) Read current linux groups for user (contains primary + supplementary in most distros)
+	currentGroups, err := samba.GetUserGroups(user)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// 2d) Build new group set:
+	// keep all NON-managed groups from current
+	newSet := map[string]bool{}
+	for _, g := range currentGroups {
+		if !managedSet[g] {
+			newSet[g] = true
 		}
 	}
 
-	// Redirect zurück
+	// add selected managed groups
+	for _, g := range selected {
+		newSet[g] = true
+	}
+
+	pg, err := samba.GetPrimaryGroupName(user)
+	if err == nil && pg != "" {
+		delete(newSet, pg)
+	}
+
+	// 2e) Apply: set supplementary groups
+	// NOTE: usermod -G sets supplementary groups. Primary group is not changed.
+	newGroups := uniqueSorted(newSet)
+	if err := samba.SetUserSupplementaryGroups(user, newGroups); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	http.Redirect(w, r, "/users", http.StatusSeeOther)
 }
