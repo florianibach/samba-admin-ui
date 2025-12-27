@@ -118,9 +118,7 @@ If you want to mount an existing samba configuration, mount (you can mount this 
 
 Planned post-MVP features:
 
-* Linux group management
-* User-to-group assignments
-* Debug / desired-vs-actual view
+* Linux user management
 * Improved responsive UI
 
 ---
@@ -128,5 +126,3 @@ Planned post-MVP features:
 ## License
 
 MIT
-
-```
