@@ -671,9 +671,12 @@ func (a *App) shareDelete(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) groups(w http.ResponseWriter, r *http.Request) {
 	type groupRow struct {
-		Name        string
-		GID         string
-		LinuxExists bool
+		Name string
+
+		ActualGID int
+
+		Managed    bool
+		DesiredGID *int
 	}
 
 	type vm struct {
@@ -681,23 +684,33 @@ func (a *App) groups(w http.ResponseWriter, r *http.Request) {
 		Groups []groupRow
 	}
 
-	groups, err := a.store.ListGroups()
+	linuxGroups, err := samba.ListLinuxGroups()
 	if err != nil {
 		a.render(w, "groups.html", "Groups", vm{Error: err.Error()})
 		return
 	}
 
-	rows := make([]groupRow, 0, len(groups))
-	for _, g := range groups {
-		gid := ""
-		if g.GID != nil {
-			gid = strconv.Itoa(*g.GID)
-		}
+	dbGroups, err := a.store.ListGroups()
+	if err != nil {
+		a.render(w, "groups.html", "Groups", vm{Error: err.Error()})
+		return
+	}
+
+	// map for quick lookup
+	dbByName := map[string]*int{}
+	for _, g := range dbGroups {
+		dbByName[g.Name] = g.GID
+	}
+
+	rows := make([]groupRow, 0, len(linuxGroups))
+	for _, g := range linuxGroups {
+		desired, managed := dbByName[g.Name]
 
 		rows = append(rows, groupRow{
-			Name:        g.Name,
-			GID:         gid,
-			LinuxExists: samba.LinuxGroupExists(g.Name),
+			Name:       g.Name,
+			ActualGID:  g.GID,
+			Managed:    managed,
+			DesiredGID: desired,
 		})
 	}
 

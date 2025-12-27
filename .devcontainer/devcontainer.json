@@ -21,8 +21,8 @@
 	"remoteUser": "root",
 	"mounts": [
 		"source=/home/florian/usbdrv,target=/shares,type=bind",
-    "source=/home/florian/usbdrv/samba-admin-ui/data/samba,target=/etc/samba,type=bind",
-    "source=/home/florian/usbdrv/samba-admin-ui/data/log,target=/var/log/samba,type=bind"
+    "source=/home/florian/usbdrv/samba-admin-ui/samba,target=/etc/samba,type=bind",
+    "source=/home/florian/usbdrv/samba-admin-ui/log,target=/var/log/samba,type=bind"
 	],
 	"remoteEnv": {
 	//	"RESTIC_REPOSITORY": "/repo",

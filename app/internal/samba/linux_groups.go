@@ -49,3 +49,11 @@ func AddUserToGroup(user, group string) error {
 	}
 	return nil
 }
+
+func DeleteLinuxGroup(name string) error {
+	_, errStr, code, _ := run(5*time.Second, "groupdel", name)
+	if code != 0 {
+		return fmt.Errorf("groupdel failed: %s", strings.TrimSpace(errStr))
+	}
+	return nil
+}

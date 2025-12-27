@@ -42,7 +42,7 @@
           <tr>
             <th>Name</th>
             <th>GID</th>
-            <th>Linux</th>
+            <th>Managed</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
@@ -50,23 +50,34 @@
           {{ range .Data.Groups }}
           <tr>
             <td>{{ .Name }}</td>
-            <td>{{ .GID }}</td>
+            <td>{{ .ActualGID }}</td>
             <td>
-              {{ if .LinuxExists }}
-                <span class="badge text-bg-success">exists</span>
-              {{ else }}
-                <span class="badge text-bg-warning">missing</span>
-              {{ end }}
+            {{ if .Managed }}
+                <span class="badge text-bg-primary">managed</span>
+            {{ else }}
+                <span class="badge text-bg-secondary">system</span>
+            {{ end }}
             </td>
-            <td class="text-end">
-              <form method="post" action="/groups/delete" class="d-inline">
+            {{ if .Managed }}
+                <form method="post" action="/groups/delete" class="d-inline">
                 <input type="hidden" name="name" value="{{ .Name }}">
                 <button class="btn btn-sm btn-outline-danger" type="submit"
-                        onclick="return confirm('Delete group {{ .Name }}?');">
-                  Delete
+                        onclick="return confirm('Unmanage group {{ .Name }}? (DB only)');">
+                    Unmanage
                 </button>
-              </form>
-            </td>
+                </form>
+                {{ end }}
+                <td>
+                  {{ if .Managed }}
+                  <form method="post" action="/groups/delete" class="d-inline">
+                    <input type="hidden" name="name" value="{{ .Name }}">
+                    <button class="btn btn-sm btn-outline-danger" type="submit"
+                            onclick="return confirm('Unmanage group {{ .Name }}? (DB only)');">
+                      Unmanage
+                    </button>
+                  </form>
+                  {{ end }}
+                </td>
           </tr>
           {{ else }}
           <tr>
