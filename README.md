@@ -65,8 +65,8 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      # Samba config (read-only)
-      - ./samba-admin-ui/samba/smb.conf:/etc/samba/smb.conf:ro
+      # (optional) Samba config (read-only)
+      - ./samba-admin-ui/samba/smb.conf:/etc/samba/smb.conf:ro      
 
       # UI-managed share definitions
       - ./samba-admin-ui/samba/shares.d:/etc/samba/shares.d
@@ -105,6 +105,10 @@ You should persist at least:
 * `/var/lib/samba` – Samba users and passwords
 * `/data/` – internal application state
 * `/etc/samba/shares.d` – UI-managed shares
+
+If you want to mount an existing samba configuration, mount (you can mount this as read-only):
+* `/etc/samba/smb.conf` - must contain `include = /etc/samba/shares.d/ui/shares.conf` at the end of the global section
+
 
 ---
 

@@ -771,7 +771,6 @@ func (a *App) groupsDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// MVP: einfach löschen (DB). Später: blocken wenn noch assignments existieren.
 	if err := a.store.DeleteGroup(name); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
