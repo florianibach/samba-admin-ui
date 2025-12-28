@@ -49,3 +49,8 @@ func (s *Store) GetGroup(name string) (Group, bool, error) {
 	}
 	return g, true, nil
 }
+
+func (s *Store) UpdateGroupGID(name string, gid int) error {
+	_, err := s.DB.Exec(`UPDATE groups SET gid = ? WHERE name = ?`, gid, name)
+	return err
+}

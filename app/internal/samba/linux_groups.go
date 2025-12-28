@@ -118,3 +118,23 @@ func SetUserSupplementaryGroups(user string, groups []string) error {
 	}
 	return nil
 }
+
+func GetLinuxGroupGID(name string) (*int, error) {
+	out, errStr, code, err := run(3*time.Second, "getent", "group", name)
+	if err != nil && code == 0 {
+		return nil, err
+	}
+	if code != 0 {
+		return nil, fmt.Errorf("getent group failed: %s", strings.TrimSpace(errStr))
+	}
+	// name:x:gid:members
+	parts := strings.Split(strings.TrimSpace(out), ":")
+	if len(parts) < 3 {
+		return nil, fmt.Errorf("unexpected getent group format")
+	}
+	gid, convErr := strconv.Atoi(parts[2])
+	if convErr != nil {
+		return nil, convErr
+	}
+	return &gid, nil
+}

@@ -21,3 +21,8 @@ func nullableInt(v *int) any {
 	}
 	return sql.NullInt64{Int64: int64(*v), Valid: true}
 }
+
+func (s *Store) UpdateUserIDs(name string, uid int, gid int) error {
+	_, err := s.DB.Exec(`UPDATE users SET uid = ?, gid = ? WHERE name = ?`, uid, gid, name)
+	return err
+}
