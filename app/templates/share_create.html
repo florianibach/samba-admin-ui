@@ -1,60 +1,78 @@
 {{ define "content" }}
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h3 mb-0">Create Share</h1>
-  <a class="btn btn-outline-secondary" href="/shares">Back</a>
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+  <h1 class="h3 mb-0">
+    <i class="bi bi-plus-circle"></i> Create Share
+  </h1>
+  <a class="btn btn-outline-secondary" href="/shares">
+    <i class="bi bi-arrow-left"></i> Back
+  </a>
 </div>
 
 {{ if .Data.Error }}
-  <div class="alert alert-danger">{{ .Data.Error }}</div>
+  <div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ .Data.Error }}
+  </div>
 {{ end }}
 
 <div class="card">
   <div class="card-body">
     <form method="post" action="/shares/create" class="row g-3">
-      <div class="col-md-4">
-        <label class="form-label">Share name</label>
+      <div class="col-12 col-md-4">
+        <label class="form-label">
+          <i class="bi bi-tag"></i> Share name
+        </label>
         <input class="form-control" name="name" required value="{{ .Data.Name }}" placeholder="e.g. vater">
         <div class="form-text">Allowed: letters, numbers, . _ -</div>
       </div>
 
-      <div class="col-md-8">
-        <label class="form-label">Path</label>
+      <div class="col-12 col-md-8">
+        <label class="form-label">
+          <i class="bi bi-folder"></i> Path
+        </label>
         <input class="form-control" name="path" required value="{{ .Data.Path }}" placeholder="/shares/vater">
       </div>
 
-      <div class="col-md-6">
-        <label class="form-label">Valid users (optional)</label>
+      <div class="col-12 col-md-6">
+        <label class="form-label">
+          <i class="bi bi-people"></i> Valid users (optional)
+        </label>
         <input class="form-control" name="validUsers" value="{{ .Data.ValidUsers }}" placeholder="vater, mutter, @eltern">
         <div class="form-text">Comma separated. Use <code>@group</code> for groups.</div>
       </div>
 
-      <div class="col-md-3">
-        <label class="form-label d-block">Read only</label>
+      <div class="col-12 col-md-3">
+        <label class="form-label d-block">
+          <i class="bi bi-lock"></i> Read only
+        </label>
         <div class="form-check">
           <input class="form-check-input" type="checkbox" name="readOnly" id="ro" {{ if .Data.ReadOnly }}checked{{ end }}>
           <label class="form-check-label" for="ro">Enabled</label>
         </div>
       </div>
 
-      <div class="col-md-3">
-        <label class="form-label d-block">Browseable</label>
+      <div class="col-12 col-md-3">
+        <label class="form-label d-block">
+          <i class="bi bi-eye"></i> Browseable
+        </label>
         <div class="form-check">
           <input class="form-check-input" type="checkbox" name="browseable" id="br" {{ if .Data.Browseable }}checked{{ end }}>
           <label class="form-check-label" for="br">Visible</label>
         </div>
       </div>
 
-      <div class="col-12 d-grid">
-        <button class="btn btn-primary" type="submit">Create share</button>
+      <div class="col-12">
+        <button class="btn btn-primary w-100" type="submit">
+          <i class="bi bi-check-circle"></i> Create share
+        </button>
       </div>
 
       <div class="col-12">
         <div class="alert alert-info mb-0">
-            This UI writes share snippets to <code>{{ .Data.SnippetDir }}</code> and updates
-            <code>/etc/samba/shares.d/ui/shares.conf</code>.
-            Your <code>smb.conf</code> must include that file (manually).
-            </div>
-
+          <i class="bi bi-info-circle"></i>
+          This UI writes share snippets to <code>{{ .Data.SnippetDir }}</code> and updates
+          <code>/etc/samba/shares.d/ui/shares.conf</code>.
+          Your <code>smb.conf</code> must include that file (manually).
+        </div>
       </div>
     </form>
   </div>

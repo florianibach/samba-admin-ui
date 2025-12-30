@@ -1,42 +1,92 @@
 {{ define "content" }}
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex flex-column flex-md-row align-items-md-start justify-content-between mb-4 gap-3">
   <div>
-    <h1 class="h3 mb-0">Share: {{ .Data.Name }}</h1>
-    <div class="text-muted small">SMB_CONF: <code>{{ .Data.SmbConf }}</code></div>
+    <h1 class="h3 mb-1">
+      <i class="bi bi-folder-symlink text-warning"></i> Share: {{ .Data.Name }}
+    </h1>
+    <div class="text-muted small">
+      <i class="bi bi-file-earmark-text"></i> SMB_CONF: <code>{{ .Data.SmbConf }}</code>
+    </div>
   </div>
-  <a class="btn btn-outline-secondary" href="/shares">Back</a>
+  <a class="btn btn-outline-secondary" href="/shares">
+    <i class="bi bi-arrow-left"></i> Back
+  </a>
 </div>
 
 {{ if .Data.Error }}
-  <div class="alert alert-danger">{{ .Data.Error }}</div>
+  <div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ .Data.Error }}
+  </div>
 {{ else }}
   <div class="card mb-3">
     <div class="card-body">
-      <div class="fw-semibold mb-2">Path</div>
-      <div class="mb-2"><code>{{ index .Data.KV "path" }}</code></div>
-      {{ if .Data.PathOK }}
-        <span class="badge text-bg-success">OK</span>
-        <span class="text-muted ms-2 small">{{ .Data.Perms }}</span>
-      {{ else }}
-        <span class="badge text-bg-warning">WARN</span>
-        <span class="text-muted ms-2 small">{{ .Data.Perms }}</span>
-      {{ end }}
+      <h5 class="card-title">
+        <i class="bi bi-folder"></i> Path
+      </h5>
+      <div class="mb-3">
+        <code class="fs-6">{{ index .Data.KV "path" }}</code>
+      </div>
+      <div>
+        {{ if .Data.PathOK }}
+          <span class="badge bg-success">
+            <i class="bi bi-check-circle"></i> Path OK
+          </span>
+          <span class="text-muted ms-2 small">
+            <i class="bi bi-shield"></i> {{ .Data.Perms }}
+          </span>
+        {{ else }}
+          <span class="badge bg-warning">
+            <i class="bi bi-exclamation-triangle"></i> Path Warning
+          </span>
+          <span class="text-muted ms-2 small">
+            <i class="bi bi-shield"></i> {{ .Data.Perms }}
+          </span>
+        {{ end }}
+      </div>
     </div>
   </div>
 
   <div class="card">
     <div class="card-body">
-      <div class="fw-semibold mb-2">Settings (read-only)</div>
-      <table class="table table-sm">
-        <tbody>
+      <h5 class="card-title mb-3">
+        <i class="bi bi-gear"></i> Settings (read-only)
+      </h5>
+      
+      <!-- Card Layout for Mobile -->
+      <div class="d-md-none">
         {{ range $k, $v := .Data.KV }}
-          <tr>
-            <td class="text-muted"><code>{{ $k }}</code></td>
-            <td><code>{{ $v }}</code></td>
-          </tr>
+        <div class="card mb-2">
+          <div class="card-body py-2">
+            <div class="text-muted small mb-1">
+              <code>{{ $k }}</code>
+            </div>
+            <div>
+              <code>{{ $v }}</code>
+            </div>
+          </div>
+        </div>
         {{ end }}
-        </tbody>
-      </table>
+      </div>
+
+      <!-- Table for Tablet/Desktop -->
+      <div class="table-responsive d-none d-md-block">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th class="text-muted">Setting</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+          {{ range $k, $v := .Data.KV }}
+            <tr>
+              <td class="text-muted"><code>{{ $k }}</code></td>
+              <td><code>{{ $v }}</code></td>
+            </tr>
+          {{ end }}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 {{ end }}
