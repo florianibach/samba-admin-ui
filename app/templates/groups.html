@@ -1,7 +1,7 @@
 {{ define "content" }}
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="m-0">Groups</h1>
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+  <h1 class="h3 mb-0"><i class="bi bi-diagram-3"></i> Groups</h1>
 </div>
 
 {{ if .Data.Error }}
@@ -12,77 +12,78 @@
 
 <div class="card mb-4">
   <div class="card-body">
-    <h5 class="card-title">Create Group</h5>
+    <h5 class="card-title"><i class="bi bi-plus-circle"></i> Create Group</h5>
 
-    <form method="post" action="/groups/create" class="row g-2">
-      <div class="col-12 col-md-6">
+    <form method="post" action="/groups/create" class="row g-3">
+      <div class="col-12 col-md-6 col-lg-4">
         <label class="form-label">Name</label>
         <input class="form-control" name="name" placeholder="parents" required>
       </div>
 
-      <div class="col-12 col-md-4">
+      <div class="col-12 col-md-4 col-lg-3">
         <label class="form-label">GID (optional)</label>
         <input class="form-control" name="gid" placeholder="10050">
       </div>
 
-      <div class="col-12 col-md-2 d-flex align-items-end">
-        <button class="btn btn-primary w-100" type="submit">Create</button>
+      <div class="col-12 col-md-2 col-lg-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100" type="submit">
+          <i class="bi bi-plus"></i> Create
+        </button>
       </div>
     </form>
   </div>
 </div>
 
-<div class="card">
-  <div class="card-body">
-    <h5 class="card-title">Configured Groups (DB)</h5>
+<h2 class="h4 mb-3"><i class="bi bi-list"></i> Configured Groups</h2>
 
-    <div class="table-responsive">
-      <table class="table table-sm align-middle">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>GID</th>
-            <th>Managed</th>
-            <th class="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{ range .Data.Groups }}
-          <tr>
-            <td>{{ .Name }}</td>
-            <td>{{ .ActualGID }}</td>
-            <td>
-            {{ if .Managed }}
-                <span class="badge text-bg-primary">managed</span>
-            {{ else }}
-                <span class="badge text-bg-secondary">system</span>
-            {{ end }}
-            </td>
-            <td>
-              {{ if .Managed }}
-                <form method="post" action="/groups/delete" class="d-inline">
-                  <input type="hidden" name="name" value="{{ .Name }}">
-                  <button class="btn btn-sm btn-outline-danger" type="submit"
-                          onclick="return confirm('Delete group {{ .Name }} from Linux + DB?');">
-                    Delete
-                  </button>
-                </form>
-                {{ end }}
-            </td>
-          </tr>
+<div class="row g-3">
+  {{ range .Data.Groups }}
+  <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-diagram-3 {{ if .Managed }}text-primary{{ else }}text-secondary{{ end }}"></i>
+            {{ .Name }}
+          </h5>
+          {{ if .Managed }}
+            <span class="badge bg-primary">managed</span>
           {{ else }}
-          <tr>
-            <td colspan="4" class="text-muted">No groups configured.</td>
-          </tr>
+            <span class="badge bg-secondary">system</span>
           {{ end }}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="form-text">
-      Note: Linux groups will be created on container start (reconcile).
+        </div>
+        <div>
+          <small class="text-muted d-block">
+            <i class="bi bi-hash"></i> GID: <strong>{{ .ActualGID }}</strong>
+          </small>
+        </div>
+      </div>
+      {{ if .Managed }}
+      <div class="card-footer bg-transparent">
+        <form method="post" action="/groups/delete" class="d-grid">
+          <input type="hidden" name="name" value="{{ .Name }}">
+          <button class="btn btn-sm btn-danger" type="submit"
+                  onclick="return confirm('Delete group {{ .Name }} from Linux + DB?');">
+            <i class="bi bi-trash"></i> Delete
+          </button>
+        </form>
+      </div>
+      {{ else }}
+      <div class="card-footer bg-transparent">
+        <span class="text-muted small">System group</span>
+      </div>
+      {{ end }}
     </div>
   </div>
+  {{ else }}
+  <div class="col-12">
+    <div class="alert alert-info mb-0">No groups configured.</div>
+  </div>
+  {{ end }}
+</div>
+
+<div class="form-text mt-3">
+  Note: Linux groups will be created on container start (reconcile).
 </div>
 
 {{ end }}

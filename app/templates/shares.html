@@ -1,84 +1,108 @@
 {{ define "content" }}
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h3 mb-0">Shares</h1>
-  <a class="btn btn-primary" href="/shares/create">Create share</a>
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+  <h1 class="h3 mb-0"><i class="bi bi-folder-symlink"></i> Shares</h1>
+  <a class="btn btn-primary" href="/shares/create">
+    <i class="bi bi-plus-circle"></i> Create share
+  </a>
 </div>
 
 {{ if .Data.Error }}
   <div class="alert alert-danger">{{ .Data.Error }}</div>
 {{ else }}
-  <div class="table-responsive">
-    <table class="table table-sm align-middle">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Path</th>
-          <th>read only</th>
-          <th>Path check</th>
-          <th>Managed</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{ range .Data.Shares }}
-        <tr>
-          <td><a href="/shares/{{ .Name }}">{{ .Name }}</a></td>
-          <td><code>{{ .Path }}</code></td>
-          <td><code>{{ .ReadOnly }}</code></td>
-          <td>
-            {{ if .PathOK }}
-              <span class="badge text-bg-success">OK</span>
-              <span class="text-muted ms-2 small">{{ .Perms }}</span>
-            {{ else }}
-              <span class="badge text-bg-warning">WARN</span>
-              <span class="text-muted ms-2 small">{{ .Perms }}</span>
-            {{ end }}
-          </td>
-          <td>
-            {{ if .Managed }}
-              {{ if .Disabled }}
-                <span class="badge text-bg-secondary">disabled</span>
-              {{ else }}
-                <span class="badge text-bg-success">enabled</span>
-              {{ end }}
-            {{ else }}
-              <span class="badge text-bg-light text-dark border">manual</span>
-            {{ end }}
-          </td>
 
-          <td class="text-nowrap">
-            {{ if .Managed }}
-              {{ if .Disabled }}
-                <form class="d-inline" method="post" action="/shares/enable">
-                  <input type="hidden" name="name" value="{{ .Name }}">
-                  <button class="btn btn-sm btn-outline-success" type="submit">Enable</button>
-                </form>
-              {{ else }}
-                <form class="d-inline" method="post" action="/shares/disable">
-                  <input type="hidden" name="name" value="{{ .Name }}">
-                  <button class="btn btn-sm btn-outline-warning" type="submit">Disable</button>
-                </form>
-              {{ end }}
-
-              <form class="d-inline" method="post" action="/shares/delete"
-                    onsubmit="return confirm('Hard delete share {{ .Name }}?');">
-                <input type="hidden" name="name" value="{{ .Name }}">
-                <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
-              </form>
+<div class="row g-3">
+  {{ range .Data.Shares }}
+  <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-folder text-warning"></i>
+            <a href="/shares/{{ .Name }}" class="text-decoration-none">{{ .Name }}</a>
+          </h5>
+          {{ if .Managed }}
+            {{ if .Disabled }}
+              <span class="badge bg-secondary">disabled</span>
             {{ else }}
-              <span class="text-muted small">Not managed by UI</span>
+              <span class="badge bg-success">enabled</span>
             {{ end }}
-          </td>
+          {{ else }}
+            <span class="badge bg-light text-dark border">manual</span>
+          {{ end }}
+        </div>
+        
+        <div class="mb-3">
+          <small class="text-muted d-block mb-1">
+            <i class="bi bi-folder"></i> Path:
+          </small>
+          <code class="small">{{ .Path }}</code>
+        </div>
 
-        </tr>
-        {{ end }}
-      </tbody>
-    </table>
+        <div class="mb-2">
+          {{ if .PathOK }}
+            <span class="badge bg-success">
+              <i class="bi bi-check-circle"></i> Path OK
+            </span>
+          {{ else }}
+            <span class="badge bg-warning">
+              <i class="bi bi-exclamation-triangle"></i> Path Warning
+            </span>
+          {{ end }}
+        </div>
+
+        <div class="mb-2">
+          <small class="text-muted d-block">
+            <i class="bi bi-lock"></i> Read only: <code>{{ .ReadOnly }}</code>
+          </small>
+        </div>
+
+        <div>
+          <small class="text-muted">
+            <i class="bi bi-shield"></i> {{ .Perms }}
+          </small>
+        </div>
+      </div>
+      
+      {{ if .Managed }}
+      <div class="card-footer bg-transparent">
+        <div class="d-grid gap-2">
+          {{ if .Disabled }}
+            <form method="post" action="/shares/enable">
+              <input type="hidden" name="name" value="{{ .Name }}">
+              <button class="btn btn-sm btn-outline-success w-100" type="submit">
+                <i class="bi bi-check-circle"></i> Enable
+              </button>
+            </form>
+          {{ else }}
+            <form method="post" action="/shares/disable">
+              <input type="hidden" name="name" value="{{ .Name }}">
+              <button class="btn btn-sm btn-outline-warning w-100" type="submit">
+                <i class="bi bi-pause-circle"></i> Disable
+              </button>
+            </form>
+          {{ end }}
+          <form method="post" action="/shares/delete" onsubmit="return confirm('Hard delete share {{ .Name }}?');">
+            <input type="hidden" name="name" value="{{ .Name }}">
+            <button class="btn btn-sm btn-danger w-100" type="submit">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </form>
+        </div>
+      </div>
+      {{ else }}
+      <div class="card-footer bg-transparent">
+        <span class="text-muted small">Not managed by UI</span>
+      </div>
+      {{ end }}
+    </div>
   </div>
+  {{ end }}
+</div>
 
-  <details class="mt-4">
-    <summary class="text-muted">Show raw effective config (testparm -s)</summary>
-    <pre class="mt-2 p-3 bg-light border rounded small" style="white-space: pre-wrap;">{{ .Data.Raw }}</pre>
-  </details>
+<details class="mt-4">
+  <summary class="">Show raw effective config (testparm -s)</summary>
+  <pre class="mt-2 p-3 bg-light border rounded small" style="white-space: pre-wrap;">{{ .Data.Raw }}</pre>
+</details>
+
 {{ end }}
 {{ end }}

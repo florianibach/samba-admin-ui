@@ -1,44 +1,77 @@
 {{ define "content" }}
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h3 mb-0">Dashboard</h1>
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+  <h1 class="h3 mb-0">
+    <i class="bi bi-speedometer2"></i> Dashboard
+  </h1>
   <form method="post" action="/reload">
-    <button class="btn btn-primary" type="submit">Reload Samba Config</button>
+    <button class="btn btn-primary" type="submit">
+      <i class="bi bi-arrow-clockwise"></i> Reload Samba Config
+    </button>
   </form>
 </div>
 
 <div class="row g-3">
-  <div class="col-md-6">
-    <div class="card">
+  <!-- Config Card -->
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
       <div class="card-body">
-        <div class="fw-semibold mb-2">Config</div>
-        <div class="small text-muted mb-2">SMB_CONF: <code>{{ .Data.SmbConf }}</code></div>
-        {{ if .Data.LastReload }}
-          <div class="small text-muted">Last reload: <code>{{ .Data.LastReload }}</code></div>
-        {{ else }}
-          <div class="small text-muted">Last reload: <span class="text-muted">-</span></div>
-        {{ end }}
+        <h5 class="card-title">
+          <i class="bi bi-file-earmark-text"></i> Config
+        </h5>
+        
+        <div class="mb-3">
+          <small class="text-muted d-block mb-2">
+            <i class="bi bi-folder"></i> SMB_CONF: <code>{{ .Data.SmbConf }}</code>
+          </small>
+          
+          {{ if .Data.LastReload }}
+            <small class="text-muted d-block">
+              <i class="bi bi-clock"></i> Last reload: <code>{{ .Data.LastReload }}</code>
+            </small>
+          {{ else }}
+            <small class="text-muted d-block">
+              <i class="bi bi-clock"></i> Last reload: <span class="text-muted">-</span>
+            </small>
+          {{ end }}
+        </div>
         
         {{ if .Data.ConfigOK }}
-          <div class="alert alert-success mb-0">testparm: OK</div>
+          <div class="alert alert-success mb-0">
+            <i class="bi bi-check-circle"></i> <strong>testparm:</strong> OK
+          </div>
         {{ else }}
           <div class="alert alert-danger mb-0">
-            testparm: FAILED<br>
-            <code>{{ .Data.ConfigErr }}</code>
+            <i class="bi bi-x-circle"></i> <strong>testparm:</strong> FAILED
+            <div class="mt-2">
+              <code class="d-block small">{{ .Data.ConfigErr }}</code>
+            </div>
           </div>
         {{ end }}
       </div>
     </div>
   </div>
 
-  <div class="col-md-6">
-    <div class="card">
+  <!-- Service Card -->
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
       <div class="card-body">
-        <div class="fw-semibold mb-2">Service</div>
+        <h5 class="card-title">
+          <i class="bi bi-server"></i> Service
+        </h5>
 
         {{ if .Data.SmbdUp }}
-          <div class="alert alert-success mb-2">smbd: running</div>
+          <div class="alert alert-success mb-0">
+            <i class="bi bi-check-circle"></i> <strong>smbd:</strong> running
+          </div>
         {{ else }}
-          <div class="alert alert-warning mb-2">smbd: not running ({{ .Data.SmbdErr }})</div>
+          <div class="alert alert-warning mb-0">
+            <i class="bi bi-exclamation-triangle"></i> <strong>smbd:</strong> not running
+            {{ if .Data.SmbdErr }}
+              <div class="mt-2">
+                <code class="d-block small">{{ .Data.SmbdErr }}</code>
+              </div>
+            {{ end }}
+          </div>
         {{ end }}
       </div>
     </div>

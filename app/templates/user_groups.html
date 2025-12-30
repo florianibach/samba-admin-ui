@@ -1,8 +1,12 @@
 {{ define "content" }}
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="m-0">Groups for {{ .Data.User }}</h1>
-  <a class="btn btn-outline-secondary" href="/users">Back</a>
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+  <h1 class="h3 mb-0">
+    <i class="bi bi-diagram-3"></i> Groups for <code>{{ .Data.User }}</code>
+  </h1>
+  <a class="btn btn-outline-secondary" href="/users">
+    <i class="bi bi-arrow-left"></i> Back
+  </a>
 </div>
 
 {{ if .Data.Error }}
@@ -13,28 +17,44 @@
 
 <div class="card">
   <div class="card-body">
+    <h5 class="card-title mb-3">
+      <i class="bi bi-check2-square"></i> Select Groups
+    </h5>
+    
     <form method="post" action="/users/groups/save">
       <input type="hidden" name="user" value="{{ .Data.User }}">
 
-      <div class="mb-3">
+      <div class="mb-4">
         {{ range .Data.Groups }}
-          <div class="form-check">
+          <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" name="groups" value="{{ .Name }}" id="g-{{ .Name }}"
               {{ if .Selected }}checked{{ end }}>
             <label class="form-check-label" for="g-{{ .Name }}">
+              <i class="bi bi-diagram-3 {{ if .Selected }}text-primary{{ else }}text-muted{{ end }}"></i>
               {{ .Name }}
             </label>
           </div>
         {{ else }}
-          <div class="text-muted">No managed groups found. Create groups first.</div>
+          <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i> No managed groups found. Create groups first.
+          </div>
         {{ end }}
       </div>
 
-      <button class="btn btn-primary" type="submit">Save</button>
+      {{ if .Data.Groups }}
+      <div class="d-grid gap-2 d-md-block">
+        <button class="btn btn-primary" type="submit">
+          <i class="bi bi-save"></i> Save Groups
+        </button>
+        <a class="btn btn-outline-secondary" href="/users">
+          <i class="bi bi-x-circle"></i> Cancel
+        </a>
+      </div>
+      {{ end }}
     </form>
 
-    <div class="form-text mt-2">
-      This updates DB assignments and applies them to Linux immediately.
+    <div class="form-text mt-3">
+      <i class="bi bi-info-circle"></i> This updates DB assignments and applies them to Linux immediately.
     </div>
   </div>
 </div>
