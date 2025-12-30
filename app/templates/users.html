@@ -117,13 +117,13 @@
         <div class="d-grid gap-2">
           <form method="post" action="/users/enable">
             <input type="hidden" name="name" value="{{ .Name }}">
-            <button class="btn btn-sm btn-success w-100" type="submit">
+            <button class="btn btn-sm btn-outline-success w-100" type="submit">
               <i class="bi bi-check-circle"></i> Enable
             </button>
           </form>
           <form method="post" action="/users/disable">
             <input type="hidden" name="name" value="{{ .Name }}">
-            <button class="btn btn-sm btn-warning w-100" type="submit">
+            <button class="btn btn-sm btn-outline-warning w-100" type="submit">
               <i class="bi bi-pause-circle"></i> Disable
             </button>
           </form>
