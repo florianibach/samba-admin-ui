@@ -1,136 +1,147 @@
 {{ define "content" }}
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h3 mb-0">Users</h1>
+<div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 gap-3">
+  <h1 class="h3 mb-0"><i class="bi bi-people"></i> Users</h1>
 </div>
 
-<div class="card mt-4">
+<div class="card mb-4">
   <div class="card-body">
-    <div class="fw-semibold mb-2">Create user</div>
-    <form method="post" action="/users/create" class="row g-2">
-      <div class="col-md-3">
-        <input class="form-control" name="name" placeholder="username (e.g. vater)" required>
+    <h5 class="card-title"><i class="bi bi-plus-circle"></i> Create user</h5>
+    <form method="post" action="/users/create" class="row g-3">
+      <div class="col-12 col-md-6 col-lg-3">
+        <label class="form-label">Username</label>
+        <input class="form-control" name="name" placeholder="e.g. vater" required>
       </div>
-      <div class="col-md-3">
-        <input class="form-control" name="password" placeholder="password" type="password" required>
+      <div class="col-12 col-md-6 col-lg-2">
+        <label class="form-label">Password</label>
+        <input class="form-control" name="password" type="password" required>
       </div>
-      <div class="col-md-3">
-        <input class="form-control" name="confirm_password" placeholder="confirm password" type="password" required>
+      <div class="col-12 col-md-6 col-lg-2">
+        <label class="form-label">Confirm Password</label>
+        <input class="form-control" name="confirm_password" type="password" required>
       </div>
-
-
-      <div class="col-md-2">
-        <input class="form-control" name="uid" placeholder="UID (optional)">
+      <div class="col-6 col-md-3 col-lg-1">
+        <label class="form-label">UID</label>
+        <input class="form-control" name="uid" placeholder="opt.">
       </div>
-      <div class="col-md-2">
-        <input class="form-control" name="gid" placeholder="GID (optional)">
+      <div class="col-6 col-md-3 col-lg-1">
+        <label class="form-label">GID</label>
+        <input class="form-control" name="gid" placeholder="opt.">
       </div>
-
-      <div class="col-md-2 d-grid">
-        <button class="btn btn-primary" type="submit">Create</button>
+      <div class="col-12 col-md-6 col-lg-3 d-flex align-items-end">
+        <button class="btn btn-primary w-100" type="submit">
+          <i class="bi bi-plus"></i> Create
+        </button>
       </div>
       <div class="col-12">
         <div class="form-text">
-          If the Linux user doesn’t exist, the UI will create it (no home, nologin). UID/GID are optional.
+          If the Linux user doesn't exist, the UI will create it (no home, nologin). UID/GID are optional.
         </div>
       </div>
     </form>
   </div>
 </div>
 
-
 {{ if .Data.Error }}
   <div class="alert alert-danger">{{ .Data.Error }}</div>
 {{ else }}
 
-<h2 class="mt-4">Linux Users</h2>
+<h2 class="h4 mt-4 mb-3"><i class="bi bi-terminal"></i> Linux Users</h2>
 
-<div class="card mb-4">
-  <div class="card-body">
-    <div class="table-responsive">
-      <table class="table table-sm align-middle">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>UID</th>
-            <th>GIDs</th>
-            <td>Actions</td>
-          </tr>
-        </thead>
-        <tbody>
-          {{ range .Data.LinuxUsers }}
-          <tr>
-            <td>{{ .Name }}</td>
-            <td>{{ .UID }}</td>
-            <td>
-              {{ range $i, $g := .GIDs }}
-                {{ if $i }}, {{ end }}{{ $g }}
-              {{ end }}
-            </td>
-            <td>
-              <a class="btn btn-sm btn-outline-secondary" href="/users/groups?user={{ .Name }}">Groups</a>
-            </td>
-          </tr>
-          {{ else }}
-          <tr>
-            <td colspan="3" class="text-muted">No linux users found.</td>
-          </tr>
-          {{ end }}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="form-text">
-      Showing users with UID &gt;= 1000.
+<div class="row g-3 mb-4">
+  {{ range .Data.LinuxUsers }}
+  <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-person-circle text-primary"></i> {{ .Name }}
+        </h5>
+        <div class="mb-3">
+          <small class="text-muted d-block">
+            <i class="bi bi-hash"></i> UID: <strong>{{ .UID }}</strong>
+          </small>
+          <small class="text-muted d-block">
+            <i class="bi bi-diagram-3"></i> GIDs: 
+            {{ range $i, $g := .GIDs }}
+              {{ if $i }}, {{ end }}{{ $g }}
+            {{ end }}
+          </small>
+        </div>
+      </div>
+      <div class="card-footer bg-transparent">
+        <a class="btn btn-sm btn-outline-secondary w-100" href="/users/groups?user={{ .Name }}">
+          <i class="bi bi-diagram-3"></i> Manage Groups
+        </a>
+      </div>
     </div>
   </div>
+  {{ else }}
+  <div class="col-12">
+    <div class="alert alert-info mb-0">No linux users found.</div>
+  </div>
+  {{ end }}
 </div>
 
-<h2 class="mt-4">Samba Users</h2>
+<div class="form-text mb-4">
+  Showing users with UID &gt;= 1000.
+</div>
 
-  <div class="table-responsive">
-    <table class="table table-sm align-middle">
-      <thead>
-        <tr>
-          <th>User</th>
-          <th>Linux user exists?</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {{ range .Data.Users }}
-        <tr>
-          <td><code>{{ .Name }}</code></td>
-          <td>
-            {{ if .LinuxExists }}
-              <span class="badge text-bg-success">Yes</span>
-            {{ else }}
-              <span class="badge text-bg-warning">No</span>
-              <span class="text-muted small ms-2">getent passwd {{ .Name }} failed</span>
-            {{ end }}
-          </td>
-          <td class="text-nowrap">
-          <form class="d-inline" method="post" action="/users/enable">
-            <input type="hidden" name="name" value="{{ .Name }}">
-            <button class="btn btn-sm btn-outline-success" type="submit">Enable</button>
-          </form>
-          <form class="d-inline" method="post" action="/users/disable">
-            <input type="hidden" name="name" value="{{ .Name }}">
-            <button class="btn btn-sm btn-outline-warning" type="submit">Disable</button>
-          </form>
-          <form class="d-inline" method="post" action="/users/delete" onsubmit="return confirm('Delete Samba user {{ .Name }}?')">
-            <input type="hidden" name="name" value="{{ .Name }}">
-            <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
-          </form>
-        </td>
-        </tr>
+<h2 class="h4 mt-4 mb-3"><i class="bi bi-shield-lock"></i> Samba Users</h2>
+
+<div class="row g-3">
+  {{ range .Data.Users }}
+  <div class="col-12 col-md-6 col-lg-4 col-xl-3">
+    <div class="card h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-person-badge {{ if .LinuxExists }}text-success{{ else }}text-warning{{ end }}"></i> 
+            {{ .Name }}
+          </h5>
+          {{ if .LinuxExists }}
+            <span class="badge bg-success">
+              <i class="bi bi-check-circle"></i> Linux
+            </span>
+          {{ else }}
+            <span class="badge bg-warning">
+              <i class="bi bi-exclamation-triangle"></i> No Linux
+            </span>
+          {{ end }}
+        </div>
+        {{ if not .LinuxExists }}
+        <div class="small text-muted mb-3">
+          getent passwd {{ .Name }} failed
+        </div>
         {{ end }}
-      </tbody>
-    </table>
+      </div>
+      <div class="card-footer bg-transparent">
+        <div class="d-grid gap-2">
+          <form method="post" action="/users/enable">
+            <input type="hidden" name="name" value="{{ .Name }}">
+            <button class="btn btn-sm btn-success w-100" type="submit">
+              <i class="bi bi-check-circle"></i> Enable
+            </button>
+          </form>
+          <form method="post" action="/users/disable">
+            <input type="hidden" name="name" value="{{ .Name }}">
+            <button class="btn btn-sm btn-warning w-100" type="submit">
+              <i class="bi bi-pause-circle"></i> Disable
+            </button>
+          </form>
+          <form method="post" action="/users/delete" onsubmit="return confirm('Delete Samba user {{ .Name }}?')">
+            <input type="hidden" name="name" value="{{ .Name }}">
+            <button class="btn btn-sm btn-danger w-100" type="submit">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
+  {{ end }}
+</div>
+
 {{ end }}
 {{ end }}
-
-
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -139,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   form.addEventListener("submit", (e) => {
     const pw = form.querySelector('input[name="password"]').value;
-    const pw2 = form.querySelector('input[name="password_confirm"]').value;
+    const pw2 = form.querySelector('input[name="confirm_password"]').value;
     if (pw !== pw2) {
       e.preventDefault();
       alert("Passwords do not match.");
