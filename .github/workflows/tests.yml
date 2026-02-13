@@ -1,0 +1,29 @@
+name: Test Suite
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  go-test:
+    name: Go tests
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: app/go.mod
+          cache-dependency-path: app/go.sum
+
+      - name: Run go test
+        run: go test ./...
