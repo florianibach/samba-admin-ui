@@ -138,10 +138,10 @@ func (a *App) dashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) shares(w http.ResponseWriter, r *http.Request) {
-	sections, raw, err := samba.ReadEffectiveConfig(a.smbConf)
+	sections, raw, readErr := samba.ReadEffectiveConfig(a.smbConf)
 	indexPath := getenv("UI_SHARES_INDEX", "/etc/samba/shares.d/ui/shares.conf")
-	managed, err := samba.ReadManagedSharesIndex(indexPath)
-	if err != nil {
+	managed, managedErr := samba.ReadManagedSharesIndex(indexPath)
+	if managedErr != nil {
 		// log + treat as empty so UI still works
 		managed = map[string]samba.ManagedShareState{}
 	}
@@ -164,8 +164,8 @@ func (a *App) shares(w http.ResponseWriter, r *http.Request) {
 		Shares  []shareRow
 	}
 
-	if err != nil {
-		a.render(w, "shares.html", "Shares", vm{SmbConf: a.smbConf, Error: err.Error()})
+	if readErr != nil {
+		a.render(w, "shares.html", "Shares", vm{SmbConf: a.smbConf, Error: readErr.Error()})
 		return
 	}
 
@@ -908,21 +908,25 @@ func (a *App) userGroupsSave(w http.ResponseWriter, r *http.Request) {
 		return res
 	}
 
-	// 1) Persist desired state in DB
-	if err := a.store.SetUserGroups(user, selected); err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	// 2) Apply to Linux
-
-	// user must exist on Linux for group assignment
+	// 1) user must exist on Linux for group assignment
 	if !samba.LinuxUserExists(user) {
 		http.Error(w, "linux user does not exist", 400)
 		return
 	}
 
-	// 2a) Determine which groups are "managed" (all groups present in DB)
+	// Ensure user exists in DB as well (needed for FK constraints in user_groups).
+	uid, gid, err := samba.GetLinuxUserUIDGID(user)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	uidVal, gidVal := uid, gid
+	if err := a.store.UpsertUser(state.User{Name: user, UID: &uidVal, GID: &gidVal}); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// 2) Determine which groups are "managed" (all groups present in DB)
 	dbGroups, err := a.store.ListGroups()
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -931,6 +935,19 @@ func (a *App) userGroupsSave(w http.ResponseWriter, r *http.Request) {
 	managedSet := make(map[string]bool, len(dbGroups))
 	for _, g := range dbGroups {
 		managedSet[g.Name] = true
+	}
+
+	for _, g := range selected {
+		if !managedSet[g] {
+			http.Error(w, "invalid managed group selection: "+g, 400)
+			return
+		}
+	}
+
+	// Persist desired state in DB after validation.
+	if err := a.store.SetUserGroups(user, selected); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
 	}
 
 	// 2b) Ensure selected groups exist on Linux (optionally with GID)
